@@ -1,0 +1,24 @@
+FROM maven:3.9-eclipse-temurin-17 AS builder
+
+WORKDIR /build
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+COPY src/ src/
+
+ARG MAVEN_PROFILE=vulnerable
+ARG MAVEN_SETTINGS_FILE=""
+RUN if [ -n "$MAVEN_SETTINGS_FILE" ]; then \
+      mvn -P ${MAVEN_PROFILE} -s ${MAVEN_SETTINGS_FILE} clean package -DskipTests -B; \
+    else \
+      mvn -P ${MAVEN_PROFILE} clean package -DskipTests -B; \
+    fi
+
+FROM registry.access.redhat.com/ubi9/openjdk-17-runtime:latest
+
+COPY --from=builder /build/target/*.jar /deployments/app.jar
+COPY --from=builder /build/target/bom.json /deployments/bom.json
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "/deployments/app.jar"]

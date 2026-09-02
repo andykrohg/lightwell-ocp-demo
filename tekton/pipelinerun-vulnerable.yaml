@@ -1,0 +1,43 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: catalog-vulnerable-
+  labels:
+    app.kubernetes.io/part-of: lightwell-demo
+    demo.lightwell/variant: vulnerable
+spec:
+  pipelineRef:
+    name: secure-catalog-pipeline
+  params:
+    - name: GIT_REPO
+      value: "https://github.com/CHANGEME/lightwell-ocp-demo.git"
+    - name: GIT_REVISION
+      value: main
+    - name: MAVEN_PROFILE
+      value: vulnerable
+    - name: IMAGE_NAME
+      value: "quay.io/andy_krohg/lightwell-demo-catalog"
+    - name: IMAGE_TAG
+      value: vulnerable-latest
+    - name: NAMESPACE
+      value: lightwell-demo
+    - name: TPA_URL
+      value: "https://tpa.apps.CHANGEME.example.com"
+    - name: TPA_OIDC_ISSUER_URL
+      value: "https://sso.apps.CHANGEME.example.com/realms/trustify/protocol/openid-connect/token"
+    - name: TPA_CLIENT_ID
+      value: walker
+    - name: TPA_CLIENT_SECRET
+      value: "CHANGEME"
+    - name: ROX_CENTRAL_ENDPOINT
+      value: "central-acs.apps.CHANGEME.example.com:443"
+    - name: ROX_API_TOKEN
+      value: "CHANGEME"
+    - name: SOFT_FAIL
+      value: "true"
+  workspaces:
+    - name: shared-workspace
+      persistentVolumeClaim:
+        claimName: pipeline-workspace-pvc
+    - name: maven-settings
+      emptyDir: {}

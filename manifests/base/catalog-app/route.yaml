@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: catalog-app
+  labels:
+    app: catalog-app
+    app.kubernetes.io/name: catalog-app
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  to:
+    kind: Service
+    name: catalog-app
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

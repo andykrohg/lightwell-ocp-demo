@@ -1,0 +1,87 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: upload-sbom-to-tpa
+  labels:
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  description: >
+    Uploads a CycloneDX SBOM to Red Hat Trusted Profile Analyzer via its REST API.
+    Obtains an OIDC token using client_credentials grant, then POSTs the SBOM.
+  params:
+    - name: TPA_URL
+      type: string
+      description: Base URL of the TPA instance (e.g. https://tpa.apps.example.com)
+    - name: SBOM_PATH
+      type: string
+      default: target/bom.json
+      description: Path to the SBOM file relative to the workspace root
+    - name: SBOM_ID
+      type: string
+      description: Unique identifier for this SBOM (e.g. catalog-app-vulnerable-1.0.0)
+    - name: OIDC_ISSUER_URL
+      type: string
+      description: OIDC token endpoint URL (e.g. https://sso.example.com/realms/trustify/protocol/openid-connect/token)
+    - name: TPA_CLIENT_ID
+      type: string
+      description: OIDC client ID for TPA
+    - name: TPA_CLIENT_SECRET
+      type: string
+      description: OIDC client secret for TPA
+  workspaces:
+    - name: source
+      description: Workspace containing the built project with SBOM
+  results:
+    - name: SBOM_ID
+      description: The ID of the uploaded SBOM
+    - name: STATUS
+      description: Upload status (success or failure)
+  steps:
+    - name: obtain-token-and-upload
+      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        echo "=== Obtaining OIDC token from $(params.OIDC_ISSUER_URL) ==="
+        TOKEN=$(curl -sf -X POST "$(params.OIDC_ISSUER_URL)" \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          -d "grant_type=client_credentials" \
+          -d "client_id=$(params.TPA_CLIENT_ID)" \
+          -d "client_secret=$(params.TPA_CLIENT_SECRET)" \
+          -d "scope=openid" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+        if [ -z "$TOKEN" ]; then
+          echo "ERROR: Failed to obtain OIDC token"
+          printf "failure" > "$(results.STATUS.path)"
+          exit 1
+        fi
+        echo "Token obtained successfully."
+
+        SBOM_FILE="$(workspaces.source.path)/$(params.SBOM_PATH)"
+        if [ ! -f "$SBOM_FILE" ]; then
+          echo "ERROR: SBOM file not found at $SBOM_FILE"
+          printf "failure" > "$(results.STATUS.path)"
+          exit 1
+        fi
+
+        echo "=== Uploading SBOM to $(params.TPA_URL)/api/v3/sbom ==="
+        HTTP_CODE=$(curl -s -o /tmp/upload-response.json -w "%{http_code}" \
+          -X POST "$(params.TPA_URL)/api/v3/sbom" \
+          -H "Authorization: Bearer $TOKEN" \
+          -H "Content-Type: application/json" \
+          --data-binary @"$SBOM_FILE")
+
+        echo "HTTP response code: $HTTP_CODE"
+        cat /tmp/upload-response.json
+
+        if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+          echo "SBOM uploaded successfully."
+          printf "$(params.SBOM_ID)" > "$(results.SBOM_ID.path)"
+          printf "success" > "$(results.STATUS.path)"
+        else
+          echo "ERROR: SBOM upload failed with HTTP $HTTP_CODE"
+          printf "$(params.SBOM_ID)" > "$(results.SBOM_ID.path)"
+          printf "failure" > "$(results.STATUS.path)"
+          exit 1
+        fi

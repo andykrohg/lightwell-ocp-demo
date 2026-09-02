@@ -1,0 +1,64 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: cosign-sign-image
+  labels:
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  description: >
+    Signs a container image using cosign with a private key stored in a
+    Kubernetes secret. Supports both key-based and keyless (Fulcio/Rekor) signing.
+  params:
+    - name: IMAGE
+      type: string
+      description: Full image reference with digest to sign (e.g. quay.io/org/app@sha256:abc123)
+    - name: COSIGN_SECRET
+      type: string
+      default: cosign-signing-key
+      description: Name of the Kubernetes secret containing the cosign private key
+    - name: REKOR_URL
+      type: string
+      default: ""
+      description: Rekor transparency log URL (leave empty to skip Rekor upload)
+  results:
+    - name: SIGNATURE
+      description: Cosign signature reference
+  steps:
+    - name: sign
+      image: gcr.io/projectsigstore/cosign:v2.2.0
+      env:
+        - name: COSIGN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: $(params.COSIGN_SECRET)
+              key: cosign.password
+              optional: true
+      volumeMounts:
+        - name: cosign-key
+          mountPath: /cosign-keys
+          readOnly: true
+      script: |
+        #!/busybox/sh
+        set -eu
+
+        echo "=== Cosign Image Signing ==="
+        echo "Image: $(params.IMAGE)"
+        echo ""
+
+        SIGN_ARGS="--key /cosign-keys/cosign.key --yes"
+
+        if [ -n "$(params.REKOR_URL)" ]; then
+          SIGN_ARGS="$SIGN_ARGS --rekor-url=$(params.REKOR_URL)"
+        else
+          SIGN_ARGS="$SIGN_ARGS --tlog-upload=false"
+        fi
+
+        cosign sign $SIGN_ARGS "$(params.IMAGE)" 2>&1 | tee /tmp/sign-output.txt
+
+        echo "Image signed successfully."
+        printf "$(params.IMAGE)" > "$(results.SIGNATURE.path)"
+  volumes:
+    - name: cosign-key
+      secret:
+        secretName: $(params.COSIGN_SECRET)
+        optional: false

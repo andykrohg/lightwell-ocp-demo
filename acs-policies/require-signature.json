@@ -1,0 +1,30 @@
+{
+  "name": "Lightwell Demo — Require Image Signature",
+  "description": "Requires container images to be signed with cosign before deployment. Part of the Lightwell + ACS + TPA demo.",
+  "rationale": "Image signatures verify that images originate from a trusted build pipeline and have not been tampered with.",
+  "remediation": "Sign images using cosign with Red Hat Trusted Artifact Signer (RHTAS) during the CI pipeline.",
+  "severity": "HIGH_SEVERITY",
+  "disabled": false,
+  "lifecycleStages": ["DEPLOY"],
+  "categories": ["Security Best Practices"],
+  "policySections": [
+    {
+      "sectionName": "Signature Verification",
+      "policyGroups": [
+        {
+          "fieldName": "Image Signature Verified By",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            {
+              "value": "io.cosign"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "enforcementActions": [
+    "SCALE_TO_ZERO_ENFORCEMENT"
+  ]
+}

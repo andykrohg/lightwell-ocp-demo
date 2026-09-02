@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-app
+  labels:
+    app: catalog-app
+    app.kubernetes.io/name: catalog-app
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-app
+  template:
+    metadata:
+      labels:
+        app: catalog-app
+        app.kubernetes.io/name: catalog-app
+        app.kubernetes.io/part-of: lightwell-demo
+    spec:
+      containers:
+        - name: catalog-app
+          image: IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-app-config
+                  key: SPRING_PROFILES_ACTIVE
+                  optional: true
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5

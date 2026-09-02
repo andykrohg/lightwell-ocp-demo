@@ -1,0 +1,31 @@
+{
+  "name": "Lightwell Demo — Block Critical CVEs (CVSS >= 9.0)",
+  "description": "Blocks deployment of images containing vulnerabilities with CVSS score 9.0 or higher. Part of the Lightwell + ACS + TPA demo.",
+  "rationale": "Critical CVEs represent the highest risk to production environments and must be remediated before deployment.",
+  "remediation": "Use Lightwell Network remediated dependencies to resolve critical vulnerabilities without upgrading to new major versions.",
+  "severity": "CRITICAL_SEVERITY",
+  "disabled": false,
+  "lifecycleStages": ["BUILD", "DEPLOY"],
+  "categories": ["Vulnerability Management"],
+  "policySections": [
+    {
+      "sectionName": "Critical CVE Check",
+      "policyGroups": [
+        {
+          "fieldName": "CVSS",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            {
+              "value": ">= 9.0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "enforcementActions": [
+    "FAIL_BUILD_ENFORCEMENT",
+    "SCALE_TO_ZERO_ENFORCEMENT"
+  ]
+}

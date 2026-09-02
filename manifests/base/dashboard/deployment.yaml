@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-hub
+  labels:
+    app: demo-hub
+    app.kubernetes.io/name: demo-hub
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-hub
+  template:
+    metadata:
+      labels:
+        app: demo-hub
+        app.kubernetes.io/name: demo-hub
+        app.kubernetes.io/part-of: lightwell-demo
+    spec:
+      containers:
+        - name: demo-hub
+          image: IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: TPA_CONSOLE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-hub-config
+                  key: TPA_CONSOLE_URL
+            - name: ACS_CONSOLE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-hub-config
+                  key: ACS_CONSOLE_URL
+            - name: OCP_CONSOLE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-hub-config
+                  key: OCP_CONSOLE_URL
+            - name: DEMO_NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-hub-config
+                  key: DEMO_NAMESPACE
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5

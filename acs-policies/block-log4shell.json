@@ -1,0 +1,31 @@
+{
+  "name": "Lightwell Demo — Block Known Critical CVEs",
+  "description": "Blocks images containing specific high-profile CVEs: Log4Shell, Text4Shell, and SnakeYAML RCE. Part of the Lightwell + ACS + TPA demo.",
+  "rationale": "These CVEs are well-known, widely exploited, and must be blocked at build and deploy time.",
+  "remediation": "Replace affected dependencies with Lightwell Network remediated versions (e.g., log4j-core:2.14.1.rhlw-00001).",
+  "severity": "CRITICAL_SEVERITY",
+  "disabled": false,
+  "lifecycleStages": ["BUILD", "DEPLOY"],
+  "categories": ["Vulnerability Management"],
+  "policySections": [
+    {
+      "sectionName": "Known Critical CVEs",
+      "policyGroups": [
+        {
+          "fieldName": "CVE",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            { "value": "CVE-2021-44228" },
+            { "value": "CVE-2021-45046" },
+            { "value": "CVE-2022-42889" },
+            { "value": "CVE-2022-1471" }
+          ]
+        }
+      ]
+    }
+  ],
+  "enforcementActions": [
+    "FAIL_BUILD_ENFORCEMENT"
+  ]
+}

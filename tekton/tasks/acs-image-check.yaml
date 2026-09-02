@@ -1,0 +1,67 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: acs-image-check
+  labels:
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  description: >
+    Checks a container image against ACS security policies using roxctl.
+    Supports soft-fail mode for the vulnerable build variant.
+  params:
+    - name: ROX_CENTRAL_ENDPOINT
+      type: string
+      description: ACS Central endpoint (host:port, e.g. central-acs.apps.example.com:443)
+    - name: ROX_API_TOKEN
+      type: string
+      description: ACS API token for authentication
+    - name: IMAGE
+      type: string
+      description: Full image reference to check (e.g. quay.io/org/app@sha256:abc123)
+    - name: SOFT_FAIL
+      type: string
+      default: "false"
+      description: When "true", policy violations do not fail the task
+  results:
+    - name: CHECK_OUTPUT
+      description: Summary of the policy check result
+  steps:
+    - name: image-check
+      image: quay.io/stackrox-io/roxctl:latest
+      env:
+        - name: ROX_API_TOKEN
+          value: $(params.ROX_API_TOKEN)
+        - name: ROX_CENTRAL_ADDRESS
+          value: $(params.ROX_CENTRAL_ENDPOINT)
+      script: |
+        #!/usr/bin/env bash
+        set -uo pipefail
+
+        echo "=== ACS Image Check ==="
+        echo "Image: $(params.IMAGE)"
+        echo "Endpoint: $(params.ROX_CENTRAL_ENDPOINT)"
+        echo "Soft fail: $(params.SOFT_FAIL)"
+        echo ""
+
+        roxctl image check \
+          --insecure-skip-tls-verify \
+          --endpoint "$(params.ROX_CENTRAL_ENDPOINT)" \
+          --image "$(params.IMAGE)" \
+          --output table 2>&1 | tee /tmp/check-output.txt
+        CHECK_EXIT=$?
+
+        head -c 4096 /tmp/check-output.txt > "$(results.CHECK_OUTPUT.path)"
+
+        if [ $CHECK_EXIT -ne 0 ]; then
+          echo ""
+          echo "Policy violations detected (exit code: $CHECK_EXIT)."
+          if [ "$(params.SOFT_FAIL)" = "true" ]; then
+            echo "SOFT_FAIL is enabled — continuing despite violations."
+            exit 0
+          else
+            echo "SOFT_FAIL is disabled — failing the task."
+            exit $CHECK_EXIT
+          fi
+        else
+          echo "No policy violations found."
+        fi

@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: demo-hub
+  labels:
+    app: demo-hub
+    app.kubernetes.io/name: demo-hub
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  to:
+    kind: Service
+    name: demo-hub
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

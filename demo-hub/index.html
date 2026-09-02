@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lightwell Demo — From Vulnerable to Verified</title>
+  <link rel="stylesheet" href="https://unpkg.com/@patternfly/patternfly@5/patternfly.min.css" crossorigin="anonymous">
+  <style>
+    :root {
+      --demo-red: #c9190b;
+      --demo-green: #3e8635;
+      --demo-blue: #0066cc;
+    }
+    body { margin: 0; background: var(--pf-t--global--background--color--primary--default, #f0f0f0); }
+    .demo-header {
+      background: #1a1a1a;
+      color: white;
+      padding: 2rem 3rem;
+    }
+    .demo-header h1 { margin: 0 0 0.25rem 0; font-size: 1.8rem; }
+    .demo-header p { margin: 0; opacity: 0.8; font-size: 1rem; }
+    .demo-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .demo-acts {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+    .demo-act {
+      border-radius: 8px;
+      padding: 1.5rem;
+      background: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .demo-act-number {
+      display: inline-block;
+      width: 36px; height: 36px; line-height: 36px;
+      border-radius: 50%;
+      color: white;
+      font-weight: bold;
+      margin-bottom: 0.75rem;
+    }
+    .demo-act h3 { margin: 0.5rem 0; }
+    .demo-act p { font-size: 0.9rem; color: #6a6e73; margin: 0; }
+    .demo-links {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+    .demo-link-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      border-top: 4px solid var(--demo-blue);
+    }
+    .demo-link-card h3 { margin: 0 0 0.5rem 0; font-size: 1.1rem; }
+    .demo-link-card p { font-size: 0.85rem; color: #6a6e73; margin: 0 0 1rem 0; }
+    .demo-link-card a {
+      display: block;
+      padding: 0.4rem 0;
+      color: var(--demo-blue);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .demo-link-card a:hover { text-decoration: underline; }
+    .demo-link-card a::before { content: "→ "; }
+    .dep-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    .dep-table th, .dep-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #d2d2d2; }
+    .dep-table th { background: #f0f0f0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .dep-table code { font-size: 0.85rem; }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-red { background: #fce4e4; color: var(--demo-red); }
+    .badge-green { background: #e6f5e2; color: var(--demo-green); }
+    .badge-orange { background: #fdf0e2; color: #c46100; }
+    .card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+    .card h2 { margin: 0 0 1rem 0; font-size: 1.2rem; }
+    .card h2 span { font-size: 0.85rem; font-weight: normal; color: #6a6e73; }
+    @media (max-width: 900px) {
+      .demo-acts, .demo-links { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="demo-header">
+  <h1>Lightwell Demo — From Vulnerable to Verified</h1>
+  <p>Red Hat Advanced Developer Suite &middot; Lightwell Network &middot; Trusted Profile Analyzer &middot; Advanced Cluster Security</p>
+</div>
+
+<div class="demo-content">
+
+  <!-- Narrative -->
+  <div class="demo-acts">
+    <div class="demo-act">
+      <div class="demo-act-number" style="background: var(--demo-red);">1</div>
+      <h3>The Problem</h3>
+      <p>Standard Maven Central dependencies contain known critical CVEs. TPA flags vulnerabilities. ACS fires policy violations.</p>
+    </div>
+    <div class="demo-act">
+      <div class="demo-act-number" style="background: var(--demo-blue);">2</div>
+      <h3>The Solution</h3>
+      <p>Lightwell Network provides remediated versions of the same dependencies. Drop-in replacement — no code changes.</p>
+    </div>
+    <div class="demo-act">
+      <div class="demo-act-number" style="background: var(--demo-green);">3</div>
+      <h3>Verified &amp; Trusted</h3>
+      <p>Zero critical CVEs. ACS policies pass. Image signed. Full SBOM tracked in Trusted Profile Analyzer.</p>
+    </div>
+  </div>
+
+  <!-- Product Links -->
+  <div class="demo-links">
+    <div class="demo-link-card" style="border-top-color: #ee0000;">
+      <h3>Trusted Profile Analyzer</h3>
+      <p>SBOM management, vulnerability analysis, and dependency tracking.</p>
+      <a href="${TPA_CONSOLE_URL}" target="_blank">TPA Console</a>
+      <a href="${TPA_CONSOLE_URL}/advisory" target="_blank">Advisories &amp; CVEs</a>
+      <a href="${TPA_CONSOLE_URL}/sbom" target="_blank">SBOM Browser</a>
+    </div>
+    <div class="demo-link-card" style="border-top-color: #0066cc;">
+      <h3>Advanced Cluster Security</h3>
+      <p>Build-to-runtime security policy enforcement for Kubernetes.</p>
+      <a href="${ACS_CONSOLE_URL}/main/violations" target="_blank">Policy Violations</a>
+      <a href="${ACS_CONSOLE_URL}/main/vulnerability-management/images" target="_blank">Image Vulnerabilities</a>
+      <a href="${ACS_CONSOLE_URL}/main/risk" target="_blank">Deployment Risk</a>
+      <a href="${ACS_CONSOLE_URL}/main/policies" target="_blank">Security Policies</a>
+    </div>
+    <div class="demo-link-card" style="border-top-color: var(--demo-green);">
+      <h3>OpenShift Console</h3>
+      <p>Tekton pipelines, deployments, and cluster topology.</p>
+      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">Pipeline Runs</a>
+      <a href="${OCP_CONSOLE_URL}/topology/ns/${DEMO_NAMESPACE}" target="_blank">Topology View</a>
+      <a href="${OCP_CONSOLE_URL}/k8s/ns/${DEMO_NAMESPACE}/deployments" target="_blank">Deployments</a>
+    </div>
+  </div>
+
+  <!-- Dependency Comparison -->
+  <div class="card">
+    <h2>Dependency Comparison <span>Maven Central vs. Lightwell Network</span></h2>
+    <table class="dep-table">
+      <thead>
+        <tr>
+          <th>Dependency</th>
+          <th>Vulnerable Version</th>
+          <th>Remediated Version</th>
+          <th>CVEs Addressed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Log4j Core</strong><br><code>org.apache.logging.log4j:log4j-core</code></td>
+          <td><span class="badge badge-red">2.14.1</span></td>
+          <td><span class="badge badge-green">2.14.1.rhlw-00001</span></td>
+          <td><span class="badge badge-orange">CVE-2021-44228</span> <span class="badge badge-orange">CVE-2021-45046</span></td>
+        </tr>
+        <tr>
+          <td><strong>Jackson Databind</strong><br><code>com.fasterxml.jackson.core:jackson-databind</code></td>
+          <td><span class="badge badge-red">2.13.0</span></td>
+          <td><span class="badge badge-green">2.13.0.rhlw-00001</span></td>
+          <td><span class="badge badge-orange">CVE-2022-42003</span> <span class="badge badge-orange">CVE-2022-42004</span></td>
+        </tr>
+        <tr>
+          <td><strong>SnakeYAML</strong><br><code>org.yaml:snakeyaml</code></td>
+          <td><span class="badge badge-red">1.30</span></td>
+          <td><span class="badge badge-green">1.30.rhlw-00001</span></td>
+          <td><span class="badge badge-orange">CVE-2022-1471</span></td>
+        </tr>
+        <tr>
+          <td><strong>Commons Text</strong><br><code>org.apache.commons:commons-text</code></td>
+          <td><span class="badge badge-red">1.9</span></td>
+          <td><span class="badge badge-green">1.9.rhlw-00001</span></td>
+          <td><span class="badge badge-orange">CVE-2022-42889</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size: 0.85rem; color: #6a6e73; margin-top: 0.5rem;">
+      Lightwell Network delivers the same version with a <code>.rhlw-NNNNN</code> suffix — backported security patches, SLSA Level 3 provenance, Sigstore-signed, full SBOM included.
+    </p>
+  </div>
+
+  <!-- How it works -->
+  <div class="card">
+    <h2>Pipeline Architecture</h2>
+    <pre style="font-family: monospace; font-size: 0.9rem; line-height: 1.8; overflow-x: auto;">
+git-clone ──→ maven-build ──→ buildah ──┬──→ cosign-sign ──────┐
+                   │                    ├──→ acs-image-check ──┤──→ deploy
+                   │                    └──→ acs-image-scan ───┘
+                   └──→ upload-sbom-to-tpa (parallel)
+    </pre>
+    <p style="font-size: 0.85rem; color: #6a6e73;">
+      The same Tekton pipeline runs for both builds. The vulnerable build uses <code>--soft-fail</code> on ACS checks
+      so it deploys despite violations — letting you compare both side by side.
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>
