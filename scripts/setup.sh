@@ -84,6 +84,7 @@ done
 
 banner "Step 6: Grant pipeline service account permissions"
 oc adm policy add-role-to-user edit system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
+oc adm policy add-scc-to-user privileged system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
 
 banner "Step 7: Deploy catalog apps"
 oc apply -k "$PROJECT_DIR/manifests/overlays/vulnerable/"

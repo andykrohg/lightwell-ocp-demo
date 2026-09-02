@@ -49,7 +49,7 @@ spec:
           -d "grant_type=client_credentials" \
           -d "client_id=$(params.TPA_CLIENT_ID)" \
           -d "client_secret=$(params.TPA_CLIENT_SECRET)" \
-          -d "scope=openid" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+          -d "scope=openid" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
 
         if [ -z "$TOKEN" ]; then
           echo "ERROR: Failed to obtain OIDC token"
