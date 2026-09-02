@@ -4,6 +4,11 @@ server:
 app:
   profile: "@app.profile@"
   version: "@project.version@"
+  dep-versions:
+    woodstox-core: "@woodstox.version@"
+    json-path: "@jsonpath.version@"
+    json: "@orgjson.version@"
+    spring-core: "@spring-core.version@"
 
 management:
   endpoints:

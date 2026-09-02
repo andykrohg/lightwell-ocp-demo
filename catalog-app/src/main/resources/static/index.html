@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Catalog</title>
+<style>
+  :root { --accent: #06c; --danger: #c9190b; --success: #3e8635; --bg: #f0f0f0; --card: #fff; --text: #151515; --muted: #6a6e73; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Red Hat Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+  header { padding: 1.5rem 2rem; color: #fff; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  header.vulnerable { background: var(--danger); }
+  header.remediated { background: var(--success); }
+  header.unknown { background: #444; }
+  header h1 { font-size: 1.4rem; font-weight: 600; }
+  .badge { display: inline-block; padding: .25rem .75rem; border-radius: 1rem; font-size: .85rem; font-weight: 600; background: rgba(255,255,255,.2); }
+
+  .content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+  .deps-panel { background: var(--card); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .deps-panel h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+  .dep-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .dep-table th { text-align: left; padding: .5rem .75rem; border-bottom: 2px solid #d2d2d2; color: var(--muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+  .dep-table td { padding: .6rem .75rem; border-bottom: 1px solid #eee; }
+  .dep-table tr:last-child td { border-bottom: none; }
+  .ver { font-family: 'Red Hat Mono', monospace; font-size: .85rem; }
+  .ver .rhlw { color: var(--success); font-weight: 600; }
+  .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: .4rem; vertical-align: middle; }
+  .status-dot.patched { background: var(--success); }
+  .status-dot.vulnerable { background: var(--danger); }
+
+  .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+  .product-card { background: var(--card); border-radius: 8px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); display: flex; flex-direction: column; }
+  .product-card h3 { font-size: 1rem; margin-bottom: .4rem; }
+  .product-card .desc { font-size: .85rem; color: var(--muted); flex: 1; margin-bottom: .75rem; }
+  .product-card .meta { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; }
+  .category-tag { background: var(--bg); padding: .2rem .6rem; border-radius: 4px; font-size: .8rem; color: var(--muted); }
+  .price { font-weight: 600; color: var(--text); }
+
+  .loading { text-align: center; padding: 3rem; color: var(--muted); }
+  .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+
+<header id="header" class="unknown">
+  <h1>Product Catalog</h1>
+  <div>
+    <span class="badge" id="profile-badge">loading...</span>
+    <span class="badge" id="version-badge"></span>
+  </div>
+</header>
+
+<div class="content">
+  <div class="deps-panel">
+    <h2>Dependencies</h2>
+    <table class="dep-table">
+      <thead>
+        <tr><th>Library</th><th>Version</th><th>Status</th></tr>
+      </thead>
+      <tbody id="deps-body">
+        <tr><td colspan="3" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">Products</div>
+  <div class="products-grid" id="products-grid">
+    <div class="loading">Loading...</div>
+  </div>
+</div>
+
+<script>
+const KNOWN_CVES = {
+  'woodstox-core': 'CVE-2022-40152, CVE-2022-40156',
+  'json-path':     'CVE-2023-51074, CVE-2023-1370',
+  'json':          'CVE-2022-45688, CVE-2023-5072',
+  'spring-core':   'CVE-2022-22968, CVE-2023-20861'
+};
+
+async function init() {
+  const [health, products] = await Promise.all([
+    fetch('/api/health').then(r => r.json()).catch(() => null),
+    fetch('/api/products').then(r => r.json()).catch(() => [])
+  ]);
+
+  if (health) {
+    const profile = health.profile || 'unknown';
+    const header = document.getElementById('header');
+    header.className = profile;
+    document.getElementById('profile-badge').textContent = profile;
+    document.getElementById('version-badge').textContent = 'v' + (health.version || '?');
+    document.title = 'Product Catalog (' + profile + ')';
+
+    const deps = health.dependencies || {};
+    const tbody = document.getElementById('deps-body');
+    tbody.innerHTML = '';
+    for (const [name, version] of Object.entries(deps)) {
+      const isRhlw = version.includes('.rhlw');
+      const cves = KNOWN_CVES[name];
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + name + '</td>' +
+        '<td class="ver">' + formatVersion(version) + '</td>' +
+        '<td>' + statusCell(isRhlw, cves) + '</td>';
+      tbody.appendChild(tr);
+    }
+  }
+
+  const grid = document.getElementById('products-grid');
+  grid.innerHTML = '';
+  for (const p of products) {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.innerHTML =
+      '<h3>' + esc(p.name) + '</h3>' +
+      '<div class="desc">' + esc(p.description) + '</div>' +
+      '<div class="meta">' +
+        '<span class="category-tag">' + esc(p.category) + '</span>' +
+        '<span class="price">$' + Number(p.price).toFixed(2) + '</span>' +
+      '</div>';
+    grid.appendChild(card);
+  }
+}
+
+function formatVersion(v) {
+  const i = v.indexOf('.rhlw');
+  if (i === -1) return v;
+  return v.substring(0, i) + '<span class="rhlw">' + v.substring(i) + '</span>';
+}
+
+function statusCell(patched, cves) {
+  if (patched) return '<span class="status-dot patched"></span>Patched';
+  if (cves)    return '<span class="status-dot vulnerable"></span>' + cves;
+  return '<span class="status-dot patched"></span>OK';
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+init();
+</script>
+</body>
+</html>

@@ -57,6 +57,11 @@ banner "Step 3: Create pipeline workspace PVC"
 oc apply -f "$PROJECT_DIR/tekton/workspace-pvc.yaml"
 
 banner "Step 4: Install Tekton tasks and pipeline"
+echo "  Installing standard tasks from Tekton catalog..."
+oc apply -n "$DEMO_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.9/git-clone.yaml
+oc apply -n "$DEMO_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/maven/0.3/maven.yaml
+oc apply -n "$DEMO_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/buildah/0.8/buildah.yaml
+echo "  Installing custom tasks..."
 oc apply -f "$PROJECT_DIR/tekton/tasks/"
 oc apply -f "$PROJECT_DIR/tekton/pipeline.yaml"
 

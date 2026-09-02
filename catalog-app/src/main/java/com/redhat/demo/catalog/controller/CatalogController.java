@@ -4,10 +4,11 @@ import com.redhat.demo.catalog.model.Product;
 import com.redhat.demo.catalog.service.CatalogService;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.core.io.ClassPathResource;
 
 import org.json.JSONObject;
 
@@ -37,6 +38,18 @@ public class CatalogController {
 
     @Value("${app.bom-path:/deployments/bom.json}")
     private String bomPath;
+
+    @Value("${app.dep-versions.woodstox-core:unknown}")
+    private String woodstoxVersion;
+
+    @Value("${app.dep-versions.json-path:unknown}")
+    private String jsonPathVersion;
+
+    @Value("${app.dep-versions.json:unknown}")
+    private String orgJsonVersion;
+
+    @Value("${app.dep-versions.spring-core:unknown}")
+    private String springCoreVersion;
 
     public CatalogController(CatalogService catalogService) {
         this.catalogService = catalogService;
@@ -68,10 +81,10 @@ public class CatalogController {
         info.put("java", System.getProperty("java.version"));
 
         Map<String, String> dependencies = new LinkedHashMap<>();
-        dependencies.put("woodstox-core", getPackageVersion("com.fasterxml.woodstox", "woodstox-core"));
-        dependencies.put("json-path", getPackageVersion("com.jayway.jsonpath", "json-path"));
-        dependencies.put("json", getPackageVersion("org.json", "json"));
-        dependencies.put("spring-core", getPackageVersion("org.springframework", "spring-core"));
+        dependencies.put("woodstox-core", woodstoxVersion);
+        dependencies.put("json-path", jsonPathVersion);
+        dependencies.put("json", orgJsonVersion);
+        dependencies.put("spring-core", springCoreVersion);
         info.put("dependencies", dependencies);
 
         return info;
@@ -121,17 +134,4 @@ public class CatalogController {
         }
     }
 
-    private String getPackageVersion(String groupId, String artifactId) {
-        try {
-            String path = "META-INF/maven/" + groupId + "/" + artifactId + "/pom.properties";
-            ClassPathResource resource = new ClassPathResource(path);
-            if (resource.exists()) {
-                Properties props = new Properties();
-                props.load(resource.getInputStream());
-                return props.getProperty("version", "unknown");
-            }
-        } catch (IOException ignored) {
-        }
-        return "unknown";
-    }
 }
