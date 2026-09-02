@@ -21,7 +21,7 @@ build-vulnerable: ## Build catalog-app locally with vulnerable profile
 	cd catalog-app && mvn -P vulnerable clean package -DskipTests
 
 build-remediated: ## Build catalog-app locally with remediated profile
-	cd catalog-app && mvn -P remediated clean package -DskipTests -s settings.xml
+	cd catalog-app && mvn -P remediated clean package -DskipTests
 
 hub-build: ## Build demo hub container image
 	cd demo-hub && podman build -t $(IMAGE_REGISTRY)/lightwell-demo-hub:latest -f Containerfile .

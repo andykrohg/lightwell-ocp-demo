@@ -37,9 +37,6 @@ check_var TPA_OIDC_ISSUER
 echo -e "${GREEN}All required variables set.${NC}"
 
 echo ""
-echo "Optional variables (will use defaults if unset):"
-echo "  LIGHTWELL_USERNAME  = ${LIGHTWELL_USERNAME:-(not set, Lightwell repo won't be configured)}"
-echo "  LIGHTWELL_PASSWORD  = ${LIGHTWELL_PASSWORD:+(set)}"
 echo "  DEMO_NAMESPACE      = ${NAMESPACE}"
 echo ""
 
@@ -59,16 +56,7 @@ oc create secret generic tpa-credentials \
   --from-literal=oidc-issuer="${TPA_OIDC_ISSUER}" \
   --dry-run=client -o yaml | oc apply -f -
 
-if [ -n "${LIGHTWELL_USERNAME:-}" ] && [ -n "${LIGHTWELL_PASSWORD:-}" ]; then
-  envsubst < "$PROJECT_DIR/catalog-app/settings.xml.template" > /tmp/lightwell-settings.xml
-  oc create secret generic maven-settings \
-    --from-file=settings.xml=/tmp/lightwell-settings.xml \
-    --dry-run=client -o yaml | oc apply -f -
-  rm -f /tmp/lightwell-settings.xml
-  echo -e "${GREEN}Maven settings secret created with Lightwell credentials.${NC}"
-else
-  echo -e "${YELLOW}Skipping Lightwell Maven settings (credentials not provided).${NC}"
-fi
+echo -e "${GREEN}Lightwell public demo repository requires no credentials.${NC}"
 
 banner "Step 3: Create pipeline workspace PVC"
 oc apply -f "$PROJECT_DIR/tekton/workspace-pvc.yaml"

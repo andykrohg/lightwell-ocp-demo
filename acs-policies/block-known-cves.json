@@ -1,0 +1,35 @@
+{
+  "name": "Lightwell Demo — Block Known CVEs",
+  "description": "Blocks images containing specific CVEs targeted by this demo: Woodstox DoS, JsonPath recursion, org.json DoS, and Spring Core data binding bypass.",
+  "rationale": "These CVEs represent denial-of-service and authorization bypass vulnerabilities that must be blocked at build and deploy time.",
+  "remediation": "Replace affected dependencies with Lightwell Network remediated versions (e.g., woodstox-core:6.0.3.rhlw-00001).",
+  "severity": "HIGH_SEVERITY",
+  "disabled": false,
+  "lifecycleStages": ["BUILD", "DEPLOY"],
+  "categories": ["Vulnerability Management"],
+  "policySections": [
+    {
+      "sectionName": "Known Demo CVEs",
+      "policyGroups": [
+        {
+          "fieldName": "CVE",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            { "value": "CVE-2022-40152" },
+            { "value": "CVE-2022-40156" },
+            { "value": "CVE-2023-51074" },
+            { "value": "CVE-2023-1370" },
+            { "value": "CVE-2022-45688" },
+            { "value": "CVE-2023-5072" },
+            { "value": "CVE-2022-22968" },
+            { "value": "CVE-2023-20861" }
+          ]
+        }
+      ]
+    }
+  ],
+  "enforcementActions": [
+    "FAIL_BUILD_ENFORCEMENT"
+  ]
+}

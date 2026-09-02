@@ -24,7 +24,6 @@ Thumbs.db
 .env
 *.env.local
 settings.xml
-!settings.xml.template
 
 # Logs
 *.log

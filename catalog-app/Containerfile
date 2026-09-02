@@ -7,12 +7,7 @@ RUN mvn dependency:go-offline -B
 COPY src/ src/
 
 ARG MAVEN_PROFILE=vulnerable
-ARG MAVEN_SETTINGS_FILE=""
-RUN if [ -n "$MAVEN_SETTINGS_FILE" ]; then \
-      mvn -P ${MAVEN_PROFILE} -s ${MAVEN_SETTINGS_FILE} clean package -DskipTests -B; \
-    else \
-      mvn -P ${MAVEN_PROFILE} clean package -DskipTests -B; \
-    fi
+RUN mvn -P ${MAVEN_PROFILE} clean package -DskipTests -B
 
 FROM registry.access.redhat.com/ubi9/openjdk-17-runtime:latest
 

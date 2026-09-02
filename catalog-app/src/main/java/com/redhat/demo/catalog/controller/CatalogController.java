@@ -63,10 +63,10 @@ public class CatalogController {
         info.put("java", System.getProperty("java.version"));
 
         Map<String, String> dependencies = new LinkedHashMap<>();
-        dependencies.put("log4j-core", getPackageVersion("org.apache.logging.log4j", "log4j-core"));
-        dependencies.put("jackson-databind", getPackageVersion("com.fasterxml.jackson.core", "jackson-databind"));
-        dependencies.put("snakeyaml", getPackageVersion("org.yaml", "snakeyaml"));
-        dependencies.put("commons-text", getPackageVersion("org.apache.commons", "commons-text"));
+        dependencies.put("woodstox-core", getPackageVersion("com.fasterxml.woodstox", "woodstox-core"));
+        dependencies.put("json-path", getPackageVersion("com.jayway.jsonpath", "json-path"));
+        dependencies.put("json", getPackageVersion("org.json", "json"));
+        dependencies.put("spring-core", getPackageVersion("org.springframework", "spring-core"));
         info.put("dependencies", dependencies);
 
         return info;

@@ -59,7 +59,7 @@ spec:
     - name: shared-workspace
       description: Workspace shared across pipeline tasks
     - name: maven-settings
-      description: Workspace containing Maven settings.xml (for Lightwell credentials)
+      description: Optional workspace for Maven settings.xml (public demo repo needs no credentials)
 
   tasks:
     # 1. Clone source code

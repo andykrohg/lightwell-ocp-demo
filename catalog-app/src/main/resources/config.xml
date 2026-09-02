@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog-config>
+    <store name="Red Hat Product Catalog"/>
+    <template-vars>
+        <var name="company" value="Red Hat"/>
+    </template-vars>
+    <categories>
+        <category name="Platform" description="Enterprise infrastructure and runtime platforms"/>
+        <category name="Security" description="Supply chain security and compliance tools"/>
+        <category name="Automation" description="IT automation and orchestration"/>
+        <category name="Developer Tools" description="Development environments and portals"/>
+    </categories>
+</catalog-config>

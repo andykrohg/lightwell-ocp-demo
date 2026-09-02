@@ -40,5 +40,4 @@ spec:
       persistentVolumeClaim:
         claimName: pipeline-workspace-pvc
     - name: maven-settings
-      secret:
-        secretName: maven-settings
+      emptyDir: {}
