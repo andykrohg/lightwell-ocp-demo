@@ -83,6 +83,29 @@ for policy in "$PROJECT_DIR"/acs-policies/*.json; do
   fi
 done
 
+echo ""
+echo -n "  Registering in-cluster registry with ACS... "
+REG_RESPONSE=$(curl -sk -X POST "https://${ROX_CENTRAL_ENDPOINT}/v1/imageintegrations" \
+  -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"name\": \"Lightwell Demo Registry\",
+    \"type\": \"docker\",
+    \"categories\": [\"REGISTRY\"],
+    \"docker\": {
+      \"endpoint\": \"${REGISTRY_HOST}\",
+      \"insecure\": false
+    },
+    \"skipTestIntegration\": true
+  }" -w "%{http_code}" -o /dev/null 2>/dev/null) || true
+if [ "$REG_RESPONSE" = "200" ] || [ "$REG_RESPONSE" = "201" ]; then
+  echo -e "${GREEN}OK${NC}"
+elif [ "$REG_RESPONSE" = "409" ]; then
+  echo -e "${YELLOW}Already exists${NC}"
+else
+  echo -e "${YELLOW}HTTP $REG_RESPONSE (may already exist)${NC}"
+fi
+
 banner "Step 6: Grant pipeline service account permissions"
 oc adm policy add-role-to-user edit system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
 oc adm policy add-scc-to-user privileged system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
