@@ -7,6 +7,11 @@
   "disabled": false,
   "lifecycleStages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
+  "scope": [
+    {
+      "namespace": "lightwell-demo"
+    }
+  ],
   "policySections": [
     {
       "sectionName": "Signature Verification",
@@ -24,7 +29,5 @@
       ]
     }
   ],
-  "enforcementActions": [
-    "SCALE_TO_ZERO_ENFORCEMENT"
-  ]
+  "enforcementActions": []
 }

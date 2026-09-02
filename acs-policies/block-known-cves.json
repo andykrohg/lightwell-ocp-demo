@@ -7,6 +7,11 @@
   "disabled": false,
   "lifecycleStages": ["BUILD", "DEPLOY"],
   "categories": ["Vulnerability Management"],
+  "scope": [
+    {
+      "namespace": "lightwell-demo"
+    }
+  ],
   "policySections": [
     {
       "sectionName": "Known Demo CVEs",

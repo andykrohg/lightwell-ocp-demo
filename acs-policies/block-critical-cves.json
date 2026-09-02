@@ -7,6 +7,11 @@
   "disabled": false,
   "lifecycleStages": ["BUILD", "DEPLOY"],
   "categories": ["Vulnerability Management"],
+  "scope": [
+    {
+      "namespace": "lightwell-demo"
+    }
+  ],
   "policySections": [
     {
       "sectionName": "Critical CVE Check",
@@ -25,7 +30,6 @@
     }
   ],
   "enforcementActions": [
-    "FAIL_BUILD_ENFORCEMENT",
-    "SCALE_TO_ZERO_ENFORCEMENT"
+    "FAIL_BUILD_ENFORCEMENT"
   ]
 }
