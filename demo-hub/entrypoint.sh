@@ -7,7 +7,7 @@ export OCP_CONSOLE_URL="${OCP_CONSOLE_URL:-https://console-openshift-console.app
 export DEMO_NAMESPACE="${DEMO_NAMESPACE:-lightwell-demo}"
 
 envsubst '${TPA_CONSOLE_URL} ${ACS_CONSOLE_URL} ${OCP_CONSOLE_URL} ${DEMO_NAMESPACE}' \
-  < /usr/share/nginx/html/index.template.html \
-  > /usr/share/nginx/html/index.html
+  < /opt/app-root/src/index.template.html \
+  > /opt/app-root/src/index.html
 
 exec nginx -g 'daemon off;'

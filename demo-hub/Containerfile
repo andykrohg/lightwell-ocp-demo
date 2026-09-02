@@ -1,11 +1,12 @@
 FROM registry.access.redhat.com/ubi9/nginx-124:latest
 
 COPY nginx.conf "${NGINX_CONF_PATH}"
-COPY index.html /usr/share/nginx/html/index.template.html
+COPY index.html /opt/app-root/src/index.template.html
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 USER 0
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh && \
+    chmod g+w /opt/app-root/src
 USER 1001
 
 EXPOSE 8080

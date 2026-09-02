@@ -9,8 +9,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.json.JSONObject;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,6 +75,31 @@ public class CatalogController {
         info.put("dependencies", dependencies);
 
         return info;
+    }
+
+    @PostMapping("/products/import")
+    public ResponseEntity<Map<String, Object>> importProducts(@RequestBody String body) {
+        try {
+            XMLInputFactory factory = XMLInputFactory.newFactory();
+            XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(body));
+            int count = 0;
+            while (reader.hasNext()) {
+                int event = reader.next();
+                if (event == XMLStreamReader.START_ELEMENT && "product".equals(reader.getLocalName())) {
+                    count++;
+                }
+            }
+            reader.close();
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("status", "success");
+            result.put("imported", count);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("status", "error");
+            result.put("message", e.getClass().getSimpleName() + ": " + e.getMessage());
+            return ResponseEntity.status(500).body(result);
+        }
     }
 
     @GetMapping(value = "/dependencies", produces = MediaType.APPLICATION_JSON_VALUE)

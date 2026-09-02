@@ -10,7 +10,7 @@ spec:
     name: secure-catalog-pipeline
   params:
     - name: GIT_REPO
-      value: "https://github.com/CHANGEME/lightwell-ocp-demo.git"
+      value: "https://github.com/andykrohg/lightwell-ocp-demo.git"
     - name: GIT_REVISION
       value: main
     - name: MAVEN_PROFILE
@@ -20,19 +20,19 @@ spec:
     - name: IMAGE_TAG
       value: vulnerable-latest
     - name: NAMESPACE
-      value: lightwell-demo
+      value: __DEMO_NAMESPACE__
     - name: TPA_URL
-      value: "https://tpa.apps.CHANGEME.example.com"
+      value: "__TPA_URL__"
     - name: TPA_OIDC_ISSUER_URL
-      value: "https://sso.apps.CHANGEME.example.com/realms/trustify/protocol/openid-connect/token"
+      value: "__TPA_OIDC_ISSUER_URL__"
     - name: TPA_CLIENT_ID
       value: walker
     - name: TPA_CLIENT_SECRET
-      value: "CHANGEME"
+      value: "__TPA_CLIENT_SECRET__"
     - name: ROX_CENTRAL_ENDPOINT
-      value: "central-acs.apps.CHANGEME.example.com:443"
+      value: "__ROX_CENTRAL_ENDPOINT__"
     - name: ROX_API_TOKEN
-      value: "CHANGEME"
+      value: "__ROX_API_TOKEN__"
     - name: SOFT_FAIL
       value: "true"
   workspaces:

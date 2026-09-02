@@ -1,9 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-NAMESPACE="${DEMO_NAMESPACE:-lightwell-demo}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/resolve-env.sh"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -17,31 +19,26 @@ banner() {
   echo -e "${CYAN}========================================${NC}\n"
 }
 
-check_var() {
-  if [ -z "${!1:-}" ]; then
-    echo -e "${RED}ERROR: $1 is not set${NC}"
-    echo "  Export it before running: export $1=<value>"
-    exit 1
-  fi
-}
-
 banner "Lightwell Demo — Setup"
 
-echo "Checking required environment variables..."
-check_var ROX_API_TOKEN
-check_var ROX_CENTRAL_ENDPOINT
-check_var TPA_URL
-check_var TPA_CLIENT_ID
-check_var TPA_CLIENT_SECRET
-check_var TPA_OIDC_ISSUER
-echo -e "${GREEN}All required variables set.${NC}"
+if [ -z "$ROX_API_TOKEN" ]; then
+  echo -e "${RED}ERROR: ROX_API_TOKEN is not set${NC}"
+  echo "  Set it in demo.env or export it before running."
+  echo "  Generate one in ACS Central -> Platform Configuration -> Integrations -> API Token"
+  exit 1
+fi
 
-echo ""
-echo "  DEMO_NAMESPACE      = ${NAMESPACE}"
+echo "  DEMO_NAMESPACE        = ${DEMO_NAMESPACE}"
+echo "  TPA_NAMESPACE         = ${TPA_NAMESPACE}"
+echo "  APPS_DOMAIN           = ${APPS_DOMAIN}"
+echo "  TPA_URL               = ${TPA_URL}"
+echo "  ROX_CENTRAL_ENDPOINT  = ${ROX_CENTRAL_ENDPOINT}"
+echo "  ACS_CONSOLE_URL       = ${ACS_CONSOLE_URL}"
+echo "  OCP_CONSOLE_URL       = ${OCP_CONSOLE_URL}"
 echo ""
 
 banner "Step 1: Create OpenShift project"
-oc new-project "$NAMESPACE" 2>/dev/null || oc project "$NAMESPACE"
+oc new-project "$DEMO_NAMESPACE" 2>/dev/null || oc project "$DEMO_NAMESPACE"
 
 banner "Step 2: Create secrets"
 
@@ -56,18 +53,14 @@ oc create secret generic tpa-credentials \
   --from-literal=oidc-issuer="${TPA_OIDC_ISSUER}" \
   --dry-run=client -o yaml | oc apply -f -
 
-echo -e "${GREEN}Lightwell public demo repository requires no credentials.${NC}"
-
 banner "Step 3: Create pipeline workspace PVC"
 oc apply -f "$PROJECT_DIR/tekton/workspace-pvc.yaml"
 
-banner "Step 4: Install Tekton tasks"
+banner "Step 4: Install Tekton tasks and pipeline"
 oc apply -f "$PROJECT_DIR/tekton/tasks/"
-
-banner "Step 5: Install Tekton pipeline"
 oc apply -f "$PROJECT_DIR/tekton/pipeline.yaml"
 
-banner "Step 6: Import ACS policies"
+banner "Step 5: Import ACS policies"
 for policy in "$PROJECT_DIR"/acs-policies/*.json; do
   policy_name=$(jq -r .name "$policy")
   echo -n "  Importing: $policy_name ... "
@@ -84,16 +77,29 @@ for policy in "$PROJECT_DIR"/acs-policies/*.json; do
   fi
 done
 
-banner "Step 7: Grant pipeline service account permissions"
-oc adm policy add-role-to-user edit system:serviceaccount:"$NAMESPACE":pipeline 2>/dev/null || true
+banner "Step 6: Grant pipeline service account permissions"
+oc adm policy add-role-to-user edit system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
+
+banner "Step 7: Deploy catalog apps"
+oc apply -k "$PROJECT_DIR/manifests/overlays/vulnerable/"
+oc apply -k "$PROJECT_DIR/manifests/overlays/remediated/"
 
 banner "Step 8: Deploy demo hub"
-oc apply -k "$PROJECT_DIR/manifests/overlays/dashboard/"
+kustomize build "$PROJECT_DIR/manifests/overlays/dashboard" \
+  | sed \
+    -e "s|__TPA_CONSOLE_URL__|${TPA_CONSOLE_URL}|g" \
+    -e "s|__ACS_CONSOLE_URL__|${ACS_CONSOLE_URL}|g" \
+    -e "s|__OCP_CONSOLE_URL__|${OCP_CONSOLE_URL}|g" \
+    -e "s|__DEMO_NAMESPACE__|${DEMO_NAMESPACE}|g" \
+  | oc apply -n "$DEMO_NAMESPACE" -f -
 
 banner "Setup Complete"
 echo ""
-HUB_URL=$(oc get route demo-hub -o jsonpath='{.spec.host}' 2>/dev/null || echo "<pending>")
-echo -e "Demo Hub: ${GREEN}https://${HUB_URL}${NC}"
+HUB_URL=$(oc get route demo-hub -n "$DEMO_NAMESPACE" -o jsonpath='{.spec.host}' 2>/dev/null || echo "<pending>")
+echo -e "Demo Hub:     ${GREEN}https://${HUB_URL}${NC}"
+echo -e "TPA Console:  ${GREEN}${TPA_CONSOLE_URL}${NC}"
+echo -e "ACS Console:  ${GREEN}${ACS_CONSOLE_URL}${NC}"
+echo -e "OCP Console:  ${GREEN}${OCP_CONSOLE_URL}${NC}"
 echo ""
 echo "Next steps:"
 echo "  1. Run 'make demo' or './scripts/demo.sh' to start the guided demo"

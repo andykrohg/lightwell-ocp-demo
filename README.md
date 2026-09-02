@@ -60,15 +60,14 @@ posture of each using the native TPA, ACS, and OpenShift consoles.
 - `podman` — container builds
 - `jq` — used by setup script
 
-### Credentials
+### Configuration
+
+All cluster-specific values (TPA URLs, ACS endpoints, OCP console) are
+auto-detected via `oc`. Just copy the example env file and add your ACS token:
 
 ```bash
-export ROX_API_TOKEN="..."
-export ROX_CENTRAL_ENDPOINT="central-acs.apps.mycluster.com"
-export TPA_URL="https://tpa.apps.mycluster.com"
-export TPA_CLIENT_ID="walker"
-export TPA_CLIENT_SECRET="..."
-export TPA_OIDC_ISSUER="https://sso.apps.mycluster.com/realms/trustify"
+cp demo.env.example demo.env
+# Edit demo.env — set ROX_API_TOKEN
 ```
 
 > **Note:** The Lightwell demo repository at `packages.redhat.com` is publicly
@@ -77,13 +76,19 @@ export TPA_OIDC_ISSUER="https://sso.apps.mycluster.com/realms/trustify"
 ## Quick Start
 
 ```bash
-# 1. One-time cluster setup
+# 0. Log into the cluster
+oc login ...
+
+# 1. Install TPA (if not already deployed)
+./scripts/install-tpa.sh
+
+# 2. One-time cluster setup (auto-detects TPA/ACS/OCP URLs)
 make setup
 
-# 2. Run the guided demo
+# 3. Run the guided demo
 make demo
 
-# 3. Reset for next run
+# 4. Reset for next run
 make reset
 ```
 
@@ -103,8 +108,12 @@ lightwell-ocp-demo/
 │   ├── tasks/            Custom tasks: upload-sbom, acs-image-check/scan, cosign-sign
 │   └── pipelinerun-*.yaml  Pre-configured runs for each variant
 ├── acs-policies/         ACS policy definitions (imported during setup)
-├── manifests/            Kustomize base + overlays for each deployment
-├── scripts/              setup.sh, demo.sh (guided), reset.sh
+├── manifests/
+│   ├── base/             Kustomize base (catalog-app, dashboard)
+│   ├── overlays/         Per-variant overlays (vulnerable, remediated, dashboard)
+│   └── tpa/              TPA prerequisites + CR (used by install-tpa.sh)
+├── scripts/              setup.sh, demo.sh (guided), reset.sh, resolve-env.sh
+├── demo.env.example      Environment config template (only ROX_API_TOKEN required)
 └── Makefile              Build and deploy targets
 ```
 
@@ -129,7 +138,7 @@ lightwell-ocp-demo/
 
 ```
 make help                    Show all targets
-make setup                   One-time cluster setup
+make setup                   One-time cluster setup (requires demo.env with ROX_API_TOKEN)
 make demo                    Run guided interactive demo
 make reset                   Reset demo state
 make catalog-build-vulnerable  Build vulnerable catalog image

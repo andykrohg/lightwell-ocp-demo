@@ -8,7 +8,7 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
 
-setup: ## One-time cluster setup (requires env vars: ROX_API_TOKEN, TPA_URL, etc.)
+setup: ## One-time cluster setup (requires demo.env with ROX_API_TOKEN)
 	./scripts/setup.sh
 
 demo: ## Run the guided interactive demo
@@ -33,10 +33,26 @@ catalog-build-remediated: ## Build catalog-app container image (remediated)
 	cd catalog-app && podman build --build-arg MAVEN_PROFILE=remediated -t $(IMAGE_REGISTRY)/lightwell-demo-catalog:remediated-latest -f Containerfile .
 
 pipeline-vulnerable: ## Trigger the vulnerable build pipeline
-	oc create -f tekton/pipelinerun-vulnerable.yaml -n $(NAMESPACE)
+	@source ./scripts/resolve-env.sh && \
+	sed \
+		-e "s|__DEMO_NAMESPACE__|$$DEMO_NAMESPACE|g" \
+		-e "s|__TPA_URL__|$$TPA_URL|g" \
+		-e "s|__TPA_OIDC_ISSUER_URL__|$$TPA_OIDC_ISSUER_URL|g" \
+		-e "s|__TPA_CLIENT_SECRET__|$$TPA_CLIENT_SECRET|g" \
+		-e "s|__ROX_CENTRAL_ENDPOINT__|$$ROX_CENTRAL_ENDPOINT|g" \
+		-e "s|__ROX_API_TOKEN__|$$ROX_API_TOKEN|g" \
+		tekton/pipelinerun-vulnerable.yaml | oc create -n $(NAMESPACE) -f -
 
 pipeline-remediated: ## Trigger the remediated build pipeline
-	oc create -f tekton/pipelinerun-remediated.yaml -n $(NAMESPACE)
+	@source ./scripts/resolve-env.sh && \
+	sed \
+		-e "s|__DEMO_NAMESPACE__|$$DEMO_NAMESPACE|g" \
+		-e "s|__TPA_URL__|$$TPA_URL|g" \
+		-e "s|__TPA_OIDC_ISSUER_URL__|$$TPA_OIDC_ISSUER_URL|g" \
+		-e "s|__TPA_CLIENT_SECRET__|$$TPA_CLIENT_SECRET|g" \
+		-e "s|__ROX_CENTRAL_ENDPOINT__|$$ROX_CENTRAL_ENDPOINT|g" \
+		-e "s|__ROX_API_TOKEN__|$$ROX_API_TOKEN|g" \
+		tekton/pipelinerun-remediated.yaml | oc create -n $(NAMESPACE) -f -
 
 pipeline-logs: ## Follow the latest pipeline run logs
 	tkn pipelinerun logs -f --last -n $(NAMESPACE)

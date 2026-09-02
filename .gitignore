@@ -23,6 +23,7 @@ Thumbs.db
 # Environment / Secrets
 .env
 *.env.local
+demo.env
 settings.xml
 
 # Logs

@@ -1,9 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-NAMESPACE="${DEMO_NAMESPACE:-lightwell-demo}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/resolve-env.sh"
+
+NAMESPACE="$DEMO_NAMESPACE"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -29,11 +33,21 @@ pause() {
   echo ""
 }
 
-# Discover URLs
+sed_pipelinerun() {
+  sed \
+    -e "s|__DEMO_NAMESPACE__|${DEMO_NAMESPACE}|g" \
+    -e "s|__TPA_URL__|${TPA_URL}|g" \
+    -e "s|__TPA_OIDC_ISSUER_URL__|${TPA_OIDC_ISSUER_URL}|g" \
+    -e "s|__TPA_CLIENT_SECRET__|${TPA_CLIENT_SECRET}|g" \
+    -e "s|__ROX_CENTRAL_ENDPOINT__|${ROX_CENTRAL_ENDPOINT}|g" \
+    -e "s|__ROX_API_TOKEN__|${ROX_API_TOKEN}|g" \
+    "$1"
+}
+
 HUB_URL=$(oc get route demo-hub -n "$NAMESPACE" -o jsonpath='{.spec.host}' 2>/dev/null || echo "")
-ACS_URL="${ACS_CONSOLE_URL:-$(oc get route central -n stackrox -o jsonpath='{.spec.host}' 2>/dev/null || echo "")}"
-TPA_URL="${TPA_CONSOLE_URL:-$(oc get route -l app.kubernetes.io/name=trustify-ui -A -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "")}"
-OCP_URL="${OCP_CONSOLE_URL:-$(oc whoami --show-console 2>/dev/null || echo "")}"
+ACS_URL="${ACS_CONSOLE_URL#https://}"
+TPA_URL_HOST="${TPA_CONSOLE_URL#https://}"
+OCP_URL="$OCP_CONSOLE_URL"
 
 clear
 echo -e "${BOLD}"
@@ -50,7 +64,7 @@ narrate "and Advanced Cluster Security work together to secure your"
 narrate "software supply chain — from dependency selection to production."
 echo ""
 [ -n "$HUB_URL" ] && echo -e "  Demo Hub:  ${GREEN}https://${HUB_URL}${NC}"
-[ -n "$TPA_URL" ] && echo -e "  TPA:       ${GREEN}https://${TPA_URL}${NC}"
+[ -n "$TPA_URL_HOST" ] && echo -e "  TPA:       ${GREEN}https://${TPA_URL_HOST}${NC}"
 [ -n "$ACS_URL" ] && echo -e "  ACS:       ${GREEN}https://${ACS_URL}${NC}"
 [ -n "$OCP_URL" ] && echo -e "  OpenShift: ${GREEN}${OCP_URL}${NC}"
 pause
@@ -71,7 +85,7 @@ narrate "Let's build it with these vulnerable dependencies and see what happens.
 pause
 
 narrate "Triggering the vulnerable build pipeline..."
-oc create -f "$PROJECT_DIR/tekton/pipelinerun-vulnerable.yaml" -n "$NAMESPACE"
+sed_pipelinerun "$PROJECT_DIR/tekton/pipelinerun-vulnerable.yaml" | oc create -n "$NAMESPACE" -f -
 echo ""
 narrate "The Tekton pipeline will:"
 echo "  1. Clone the source code"
@@ -91,10 +105,10 @@ pause
 banner "REVIEW: Vulnerable Build Results"
 narrate "Now let's see what the security tools found. Open these views:"
 echo ""
-if [ -n "$TPA_URL" ]; then
+if [ -n "$TPA_URL_HOST" ]; then
   echo -e "  ${BOLD}Trusted Profile Analyzer:${NC}"
-  echo -e "    SBOM Browser:    ${GREEN}https://${TPA_URL}/sbom${NC}"
-  echo -e "    Advisories:      ${GREEN}https://${TPA_URL}/advisory${NC}"
+  echo -e "    SBOM Browser:    ${GREEN}https://${TPA_URL_HOST}/sbom${NC}"
+  echo -e "    Advisories:      ${GREEN}https://${TPA_URL_HOST}/advisory${NC}"
   narrate "  → Find the vulnerable SBOM, click in to see the CVE list."
   narrate "  → Note the critical and high severity counts."
   echo ""
@@ -133,7 +147,7 @@ narrate "Just switch the Maven profile from 'vulnerable' to 'remediated'."
 pause
 
 narrate "Triggering the remediated build pipeline..."
-oc create -f "$PROJECT_DIR/tekton/pipelinerun-remediated.yaml" -n "$NAMESPACE"
+sed_pipelinerun "$PROJECT_DIR/tekton/pipelinerun-remediated.yaml" | oc create -n "$NAMESPACE" -f -
 echo ""
 narrate "This time the pipeline uses the 'remediated' Maven profile,"
 narrate "pulling dependencies from Lightwell Network instead of Maven Central."
@@ -148,8 +162,8 @@ banner "ACT 3: VERIFIED AND TRUSTED"
 
 narrate "Let's compare the results. Go back to the same views:"
 echo ""
-if [ -n "$TPA_URL" ]; then
-  echo -e "  ${BOLD}TPA — SBOM Browser:${NC}  ${GREEN}https://${TPA_URL}/sbom${NC}"
+if [ -n "$TPA_URL_HOST" ]; then
+  echo -e "  ${BOLD}TPA — SBOM Browser:${NC}  ${GREEN}https://${TPA_URL_HOST}/sbom${NC}"
   narrate "  → Find the remediated SBOM alongside the vulnerable one."
   narrate "  → Compare CVE counts — critical should be zero."
   echo ""

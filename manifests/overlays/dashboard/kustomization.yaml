@@ -12,7 +12,7 @@ images:
 configMapGenerator:
   - name: demo-hub-config
     literals:
-      - TPA_CONSOLE_URL=https://tpa.apps.example.com
-      - ACS_CONSOLE_URL=https://central-acs.apps.example.com
-      - OCP_CONSOLE_URL=https://console-openshift-console.apps.example.com
-      - DEMO_NAMESPACE=lightwell-demo
+      - TPA_CONSOLE_URL=__TPA_CONSOLE_URL__
+      - ACS_CONSOLE_URL=__ACS_CONSOLE_URL__
+      - OCP_CONSOLE_URL=__OCP_CONSOLE_URL__
+      - DEMO_NAMESPACE=__DEMO_NAMESPACE__
