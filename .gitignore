@@ -28,3 +28,6 @@ settings.xml
 
 # Logs
 *.log
+
+# Cosign
+cosign.pub

@@ -54,6 +54,14 @@ oc create secret generic tpa-credentials \
   --from-literal=oidc-issuer="${TPA_OIDC_ISSUER}" \
   --dry-run=client -o yaml | oc apply -f -
 
+if ! oc get secret cosign-signing-key -n "$DEMO_NAMESPACE" &>/dev/null; then
+  echo "  Generating cosign key pair..."
+  COSIGN_PASSWORD="" cosign generate-key-pair k8s://"$DEMO_NAMESPACE"/cosign-signing-key 2>/dev/null
+  echo -e "  ${GREEN}Cosign key pair created${NC}"
+else
+  echo -e "  Cosign signing key ${YELLOW}already exists${NC}"
+fi
+
 banner "Step 3: Create pipeline workspace PVC"
 oc apply -f "$PROJECT_DIR/tekton/workspace-pvc.yaml"
 
