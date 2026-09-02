@@ -86,6 +86,8 @@ spec:
       taskRef:
         name: maven
       params:
+        - name: MAVEN_IMAGE
+          value: maven:3.9-eclipse-temurin-17
         - name: GOALS
           value:
             - -P$(params.MAVEN_PROFILE)
