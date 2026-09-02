@@ -39,7 +39,7 @@ spec:
     accessKey: minioadmin
     secretKey: minioadmin-demo-password
     bucket: trustify
-    region: us-east-1
+    region: http://minio.NAMESPACE.svc.cluster.local:9000
   createDatabase:
     enabled: true
     image: {}

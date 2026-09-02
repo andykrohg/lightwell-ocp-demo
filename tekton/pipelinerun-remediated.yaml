@@ -16,7 +16,7 @@ spec:
     - name: MAVEN_PROFILE
       value: remediated
     - name: IMAGE_NAME
-      value: "quay.io/andy_krohg/lightwell-demo-catalog"
+      value: "__REGISTRY_HOST__/catalog-app"
     - name: IMAGE_TAG
       value: remediated-latest
     - name: NAMESPACE

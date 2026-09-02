@@ -116,6 +116,8 @@ spec:
           value: catalog-app/Containerfile.pipeline
         - name: CONTEXT
           value: catalog-app
+        - name: TLSVERIFY
+          value: "false"
       workspaces:
         - name: source
           workspace: shared-workspace
@@ -151,7 +153,7 @@ spec:
         name: cosign-sign-image
       params:
         - name: IMAGE
-          value: $(tasks.buildah.results.IMAGE_DIGEST)
+          value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
 
     # 6. ACS policy check
     - name: acs-image-check
@@ -165,7 +167,7 @@ spec:
         - name: ROX_API_TOKEN
           value: $(params.ROX_API_TOKEN)
         - name: IMAGE
-          value: $(tasks.buildah.results.IMAGE_DIGEST)
+          value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
         - name: SOFT_FAIL
           value: $(params.SOFT_FAIL)
 
@@ -181,7 +183,7 @@ spec:
         - name: ROX_API_TOKEN
           value: $(params.ROX_API_TOKEN)
         - name: IMAGE
-          value: $(tasks.buildah.results.IMAGE_DIGEST)
+          value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
 
     # 8. Deploy to OpenShift
     - name: deploy
@@ -195,7 +197,9 @@ spec:
             type: string
           - name: MAVEN_PROFILE
             type: string
-          - name: IMAGE
+          - name: IMAGE_NAME
+            type: string
+          - name: IMAGE_TAG
             type: string
         steps:
           - name: deploy
@@ -204,22 +208,22 @@ spec:
               #!/usr/bin/env bash
               set -euo pipefail
 
+              IMAGE="$(params.IMAGE_NAME):$(params.IMAGE_TAG)"
               echo "=== Deploying catalog-app ($(params.MAVEN_PROFILE)) ==="
               echo "Namespace: $(params.NAMESPACE)"
-              echo "Image: $(params.IMAGE)"
+              echo "Image: ${IMAGE}"
 
               cd $(workspaces.source.path)
 
-              # Apply the overlay for this variant
-              oc apply -k manifests/overlays/$(params.MAVEN_PROFILE)/ \
-                -n $(params.NAMESPACE)
+              REGISTRY_HOST=$(echo "$(params.IMAGE_NAME)" | cut -d/ -f1)
+              oc kustomize manifests/overlays/$(params.MAVEN_PROFILE)/ \
+                | sed "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
+                | oc apply -n $(params.NAMESPACE) -f -
 
-              # Patch the deployment with the actual image
               oc set image deployment/$(params.MAVEN_PROFILE)-catalog-app \
-                catalog-app=$(params.IMAGE) \
+                catalog-app="${IMAGE}" \
                 -n $(params.NAMESPACE)
 
-              # Wait for rollout
               oc rollout status deployment/$(params.MAVEN_PROFILE)-catalog-app \
                 -n $(params.NAMESPACE) --timeout=120s
 
@@ -231,8 +235,10 @@ spec:
           value: $(params.NAMESPACE)
         - name: MAVEN_PROFILE
           value: $(params.MAVEN_PROFILE)
-        - name: IMAGE
-          value: $(tasks.buildah.results.IMAGE_DIGEST)
+        - name: IMAGE_NAME
+          value: $(params.IMAGE_NAME)
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
       workspaces:
         - name: source
           workspace: shared-workspace

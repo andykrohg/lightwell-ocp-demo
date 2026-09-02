@@ -31,6 +31,7 @@ fi
 echo "  DEMO_NAMESPACE        = ${DEMO_NAMESPACE}"
 echo "  TPA_NAMESPACE         = ${TPA_NAMESPACE}"
 echo "  APPS_DOMAIN           = ${APPS_DOMAIN}"
+echo "  REGISTRY_HOST         = ${REGISTRY_HOST}"
 echo "  TPA_URL               = ${TPA_URL}"
 echo "  ROX_CENTRAL_ENDPOINT  = ${ROX_CENTRAL_ENDPOINT}"
 echo "  ACS_CONSOLE_URL       = ${ACS_CONSOLE_URL}"
@@ -86,11 +87,20 @@ banner "Step 6: Grant pipeline service account permissions"
 oc adm policy add-role-to-user edit system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
 oc adm policy add-scc-to-user privileged system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
 
-banner "Step 7: Deploy catalog apps"
-oc apply -k "$PROJECT_DIR/manifests/overlays/vulnerable/"
-oc apply -k "$PROJECT_DIR/manifests/overlays/remediated/"
+banner "Step 7: Deploy in-cluster container registry"
+oc apply -f "$PROJECT_DIR/manifests/base/registry/"
+echo "  Waiting for registry to be ready..."
+oc rollout status deployment/registry -n "$DEMO_NAMESPACE" --timeout=60s
 
-banner "Step 8: Deploy demo hub"
+banner "Step 8: Deploy catalog apps"
+kustomize build "$PROJECT_DIR/manifests/overlays/vulnerable" \
+  | sed -e "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
+  | oc apply -n "$DEMO_NAMESPACE" -f -
+kustomize build "$PROJECT_DIR/manifests/overlays/remediated" \
+  | sed -e "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
+  | oc apply -n "$DEMO_NAMESPACE" -f -
+
+banner "Step 9: Deploy demo hub"
 kustomize build "$PROJECT_DIR/manifests/overlays/dashboard" \
   | sed \
     -e "s|__TPA_CONSOLE_URL__|${TPA_CONSOLE_URL}|g" \

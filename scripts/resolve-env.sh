@@ -46,4 +46,6 @@ export TPA_CONSOLE_URL="$TPA_URL"
 export ACS_CONSOLE_URL="https://${ROX_ROUTE}"
 export OCP_CONSOLE_URL="https://console-openshift-console.${APPS_DOMAIN}"
 
+export REGISTRY_HOST="registry-${DEMO_NAMESPACE}.${APPS_DOMAIN}"
+
 export ROX_API_TOKEN="${ROX_API_TOKEN:-}"
