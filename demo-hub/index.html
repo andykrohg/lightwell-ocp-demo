@@ -7,11 +7,13 @@
   <link rel="stylesheet" href="https://unpkg.com/@patternfly/patternfly@5/patternfly.min.css" crossorigin="anonymous">
   <style>
     :root {
-      --demo-red: #c9190b;
-      --demo-green: #3e8635;
-      --demo-blue: #0066cc;
+      --act-problem: #c9190b;
+      --act-solution: #0066cc;
+      --act-enforce: #3e8635;
+      --act-bonus: #6a6e73;
     }
-    body { margin: 0; background: var(--pf-t--global--background--color--primary--default, #f0f0f0); }
+    body { margin: 0; background: #f0f0f0; }
+
     .demo-header {
       background: #1a1a1a;
       color: white;
@@ -19,140 +21,198 @@
     }
     .demo-header h1 { margin: 0 0 0.25rem 0; font-size: 1.8rem; }
     .demo-header p { margin: 0; opacity: 0.8; font-size: 1rem; }
-    .demo-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-    .demo-acts {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-      margin: 2rem 0;
+
+    .demo-content { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+
+    /* Timeline */
+    .timeline { position: relative; padding-left: 3.5rem; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 1.125rem;
+      top: 1.5rem;
+      bottom: 1.5rem;
+      width: 2px;
+      background: #d2d2d2;
     }
-    .demo-act {
-      border-radius: 8px;
-      padding: 1.5rem;
+
+    /* Act dividers */
+    .act-label {
+      position: relative;
+      margin: 2rem 0 1.25rem -3.5rem;
+      padding-left: 3.5rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .act-label.problem { color: var(--act-problem); }
+    .act-label.solution { color: var(--act-solution); }
+    .act-label.enforce { color: var(--act-enforce); }
+    .act-label.bonus { color: var(--act-bonus); }
+    .act-label:first-child { margin-top: 0; }
+
+    /* Step cards */
+    .step {
+      position: relative;
       background: white;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      text-align: center;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
-    .demo-act-number {
-      display: inline-block;
-      width: 36px; height: 36px; line-height: 36px;
+    .step-num {
+      position: absolute;
+      left: -3.5rem;
+      top: 1.25rem;
+      width: 2.25rem;
+      height: 2.25rem;
+      line-height: 2.25rem;
+      text-align: center;
       border-radius: 50%;
       color: white;
-      font-weight: bold;
-      margin-bottom: 0.75rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      z-index: 1;
     }
-    .demo-act h3 { margin: 0.5rem 0; }
-    .demo-act p { font-size: 0.9rem; color: #6a6e73; margin: 0; }
-    .demo-links {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-      margin: 2rem 0;
+    .step h3 { margin: 0 0 0.5rem 0; font-size: 1.1rem; }
+    .step p { margin: 0 0 0.75rem 0; font-size: 0.9rem; color: #4a4a4a; line-height: 1.5; }
+    .step p:last-child { margin-bottom: 0; }
+
+    .look-for {
+      background: #f9f9f9;
+      border-left: 3px solid #d2d2d2;
+      padding: 0.6rem 0.9rem;
+      margin: 0.75rem 0;
+      font-size: 0.85rem;
+      color: #3c3f42;
+      line-height: 1.5;
     }
-    .demo-link-card {
+    .look-for strong { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6a6e73; margin-bottom: 0.25rem; }
+
+    .step-links { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .step-links a {
+      display: inline-block;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid #d2d2d2;
+      border-radius: 4px;
+      color: #0066cc;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: background 0.15s;
+    }
+    .step-links a:hover { background: #f0f4f8; border-color: #0066cc; }
+
+    /* Dep comparison table */
+    .dep-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; }
+    .dep-table th, .dep-table td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid #e8e8e8; }
+    .dep-table th { background: #f5f5f5; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6a6e73; }
+    .dep-table code { font-size: 0.8rem; }
+    .badge {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-red { background: #fce4e4; color: var(--act-problem); }
+    .badge-green { background: #e6f5e2; color: var(--act-enforce); }
+    .badge-cve { background: #fdf0e2; color: #c46100; }
+
+    /* Pipeline diagram */
+    .pipeline-box {
+      background: #f9f9f9;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin: 0.75rem 0;
+      font-family: monospace;
+      font-size: 0.8rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .note { font-size: 0.8rem; color: #6a6e73; font-style: italic; }
+
+    /* Takeaways */
+    .takeaways {
       background: white;
       border-radius: 8px;
       padding: 1.5rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      border-top: 4px solid var(--demo-blue);
+      margin-top: 2rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
-    .demo-link-card h3 { margin: 0 0 0.5rem 0; font-size: 1.1rem; }
-    .demo-link-card p { font-size: 0.85rem; color: #6a6e73; margin: 0 0 1rem 0; }
-    .demo-link-card a {
-      display: block;
-      padding: 0.4rem 0;
-      color: var(--demo-blue);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    .demo-link-card a:hover { text-decoration: underline; }
-    .demo-link-card a::before { content: "→ "; }
-    .dep-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-    .dep-table th, .dep-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #d2d2d2; }
-    .dep-table th { background: #f0f0f0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .dep-table code { font-size: 0.85rem; }
-    .badge {
-      display: inline-block;
-      padding: 0.15rem 0.5rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-    .badge-red { background: #fce4e4; color: var(--demo-red); }
-    .badge-green { background: #e6f5e2; color: var(--demo-green); }
-    .badge-orange { background: #fdf0e2; color: #c46100; }
-    .card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
-    .card h2 { margin: 0 0 1rem 0; font-size: 1.2rem; }
-    .card h2 span { font-size: 0.85rem; font-weight: normal; color: #6a6e73; }
-    @media (max-width: 900px) {
-      .demo-acts, .demo-links { grid-template-columns: 1fr; }
+    .takeaways h3 { margin: 0 0 0.75rem 0; font-size: 1.1rem; }
+    .takeaways ul { margin: 0; padding-left: 1.25rem; }
+    .takeaways li { font-size: 0.9rem; line-height: 1.8; color: #3c3f42; }
+
+    @media (max-width: 600px) {
+      .demo-content { padding: 1rem 0.5rem; }
+      .timeline { padding-left: 3rem; }
+      .step-num { left: -3rem; width: 2rem; height: 2rem; line-height: 2rem; font-size: 0.8rem; }
+      .dep-table { font-size: 0.75rem; }
     }
   </style>
 </head>
 <body>
 
 <div class="demo-header">
-  <h1>Lightwell Demo — From Vulnerable to Verified</h1>
-  <p>Red Hat Advanced Developer Suite &middot; Lightwell Network &middot; Trusted Profile Analyzer &middot; Advanced Cluster Security</p>
+  <h1>From Vulnerable to Verified</h1>
+  <p>Lightwell Network &middot; Trusted Profile Analyzer &middot; Advanced Cluster Security</p>
 </div>
 
 <div class="demo-content">
 
-  <!-- Narrative -->
-  <div class="demo-acts">
-    <div class="demo-act">
-      <div class="demo-act-number" style="background: var(--demo-red);">1</div>
-      <h3>The Problem</h3>
-      <p>Standard Maven Central dependencies contain known critical CVEs. TPA flags vulnerabilities. ACS fires policy violations.</p>
+<div class="timeline">
+
+  <!-- ── ACT 1: THE PROBLEM ── -->
+
+  <div class="act-label problem">Act 1 — The Problem</div>
+
+  <div class="step">
+    <div class="step-num" style="background: var(--act-problem);">1</div>
+    <h3>Examine the Vulnerable SBOM</h3>
+    <p>A catalog microservice was built with standard Maven Central dependencies and its SBOM was uploaded to Trusted Profile Analyzer. Several of those dependencies contain known CVEs.</p>
+    <div class="look-for">
+      <strong>What to show</strong>
+      Open the SBOM Browser. Find the <em>catalog-app</em> SBOM tagged <em>vulnerable</em>. Click into it and check the matched advisories &mdash; note the critical and high severity CVE counts.
     </div>
-    <div class="demo-act">
-      <div class="demo-act-number" style="background: var(--demo-blue);">2</div>
-      <h3>The Solution</h3>
-      <p>Lightwell Network provides remediated versions of the same dependencies. Drop-in replacement — no code changes.</p>
-    </div>
-    <div class="demo-act">
-      <div class="demo-act-number" style="background: var(--demo-green);">3</div>
-      <h3>Verified &amp; Trusted</h3>
-      <p>Zero critical CVEs. ACS policies pass. Image signed. Full SBOM tracked in Trusted Profile Analyzer.</p>
+    <div class="step-links">
+      <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
+      <a href="${TPA_CONSOLE_URL}/advisories" target="_blank">TPA &mdash; Advisories</a>
     </div>
   </div>
 
-  <!-- Product Links -->
-  <div class="demo-links">
-    <div class="demo-link-card" style="border-top-color: #ee0000;">
-      <h3>Trusted Profile Analyzer</h3>
-      <p>SBOM management, vulnerability analysis, and dependency tracking.</p>
-      <a href="${TPA_CONSOLE_URL}" target="_blank">TPA Console</a>
-      <a href="${TPA_CONSOLE_URL}/advisory" target="_blank">Advisories &amp; CVEs</a>
-      <a href="${TPA_CONSOLE_URL}/sbom" target="_blank">SBOM Browser</a>
+  <div class="step">
+    <div class="step-num" style="background: var(--act-problem);">2</div>
+    <h3>See the Violations in ACS</h3>
+    <p>Advanced Cluster Security detected policy violations against the vulnerable image. The policies are in <strong>inform</strong> mode &mdash; violations are flagged but not blocked, so the app deployed anyway.</p>
+    <div class="look-for">
+      <strong>What to show</strong>
+      Filter violations by namespace <code>${DEMO_NAMESPACE}</code>. Note the policy violations fired by the vulnerable deployment. Then check Image Vulnerabilities for the full CVE breakdown.
     </div>
-    <div class="demo-link-card" style="border-top-color: #0066cc;">
-      <h3>Advanced Cluster Security</h3>
-      <p>Build-to-runtime security policy enforcement for Kubernetes.</p>
-      <a href="${ACS_CONSOLE_URL}/main/violations" target="_blank">Policy Violations</a>
-      <a href="${ACS_CONSOLE_URL}/main/vulnerability-management/images" target="_blank">Image Vulnerabilities</a>
-      <a href="${ACS_CONSOLE_URL}/main/risk" target="_blank">Deployment Risk</a>
-      <a href="${ACS_CONSOLE_URL}/main/policies" target="_blank">Security Policies</a>
-    </div>
-    <div class="demo-link-card" style="border-top-color: var(--demo-green);">
-      <h3>OpenShift Console</h3>
-      <p>Tekton pipelines, deployments, and cluster topology.</p>
-      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">Pipeline Runs</a>
-      <a href="${OCP_CONSOLE_URL}/topology/ns/${DEMO_NAMESPACE}" target="_blank">Topology View</a>
-      <a href="${OCP_CONSOLE_URL}/k8s/ns/${DEMO_NAMESPACE}/deployments" target="_blank">Deployments</a>
+    <div class="step-links">
+      <a href="${ACS_CONSOLE_URL}/main/violations" target="_blank">ACS &mdash; Violations</a>
+      <a href="${ACS_CONSOLE_URL}/main/vulnerability-management/images" target="_blank">ACS &mdash; Image Vulnerabilities</a>
     </div>
   </div>
 
-  <!-- Dependency Comparison -->
-  <div class="card">
-    <h2>Dependency Comparison <span>Maven Central vs. Lightwell Network</span></h2>
+  <!-- ── ACT 2: THE SOLUTION ── -->
+
+  <div class="act-label solution">Act 2 — The Fix</div>
+
+  <div class="step">
+    <div class="step-num" style="background: var(--act-solution);">3</div>
+    <h3>Lightwell Network: Drop-In Remediated Dependencies</h3>
+    <p>Lightwell provides the same dependency versions with backported security patches. No code changes, no API breaks &mdash; just a different Maven repository. The version suffix <code>.rhlw-NNNNN</code> indicates a patched build.</p>
     <table class="dep-table">
       <thead>
         <tr>
           <th>Dependency</th>
-          <th>Vulnerable Version</th>
-          <th>Remediated Version</th>
-          <th>CVEs Addressed</th>
+          <th>Vulnerable</th>
+          <th>Remediated</th>
+          <th>CVEs Fixed</th>
         </tr>
       </thead>
       <tbody>
@@ -160,49 +220,118 @@
           <td><strong>Woodstox Core</strong><br><code>com.fasterxml.woodstox:woodstox-core</code></td>
           <td><span class="badge badge-red">6.0.3</span></td>
           <td><span class="badge badge-green">6.0.3.rhlw-00001</span></td>
-          <td><span class="badge badge-orange">CVE-2022-40152</span> <span class="badge badge-orange">CVE-2022-40156</span></td>
+          <td><span class="badge badge-cve">CVE-2022-40152</span> <span class="badge badge-cve">CVE-2022-40156</span></td>
         </tr>
         <tr>
           <td><strong>JsonPath</strong><br><code>com.jayway.jsonpath:json-path</code></td>
           <td><span class="badge badge-red">2.7.0</span></td>
           <td><span class="badge badge-green">2.7.0.rhlw-00001</span></td>
-          <td><span class="badge badge-orange">CVE-2023-51074</span> <span class="badge badge-orange">CVE-2023-1370</span></td>
+          <td><span class="badge badge-cve">CVE-2023-51074</span> <span class="badge badge-cve">CVE-2023-1370</span></td>
         </tr>
         <tr>
           <td><strong>org.json</strong><br><code>org.json:json</code></td>
           <td><span class="badge badge-red">20220320</span></td>
           <td><span class="badge badge-green">20220320.0.0.rhlw-00003</span></td>
-          <td><span class="badge badge-orange">CVE-2022-45688</span> <span class="badge badge-orange">CVE-2023-5072</span></td>
+          <td><span class="badge badge-cve">CVE-2022-45688</span> <span class="badge badge-cve">CVE-2023-5072</span></td>
         </tr>
         <tr>
           <td><strong>Spring Core</strong><br><code>org.springframework:spring-core</code></td>
           <td><span class="badge badge-red">5.3.18</span></td>
           <td><span class="badge badge-green">5.3.18.rhlw-00003</span></td>
-          <td><span class="badge badge-orange">CVE-2022-22968</span> <span class="badge badge-orange">CVE-2023-20861</span></td>
+          <td><span class="badge badge-cve">CVE-2022-22968</span> <span class="badge badge-cve">CVE-2023-20861</span></td>
         </tr>
       </tbody>
     </table>
-    <p style="font-size: 0.85rem; color: #6a6e73; margin-top: 0.5rem;">
-      Lightwell Network delivers the same version with a <code>.rhlw-NNNNN</code> suffix — backported security patches, SLSA Level 3 provenance, Sigstore-signed, full SBOM included.
-    </p>
   </div>
 
-  <!-- How it works -->
-  <div class="card">
-    <h2>Pipeline Architecture</h2>
-    <pre style="font-family: monospace; font-size: 0.9rem; line-height: 1.8; overflow-x: auto;">
-git-clone ──→ maven-build ──→ buildah ──┬──→ cosign-sign ──────┐
-                   │                    ├──→ acs-image-check ──┤──→ deploy
-                   │                    └──→ acs-image-scan ───┘
-                   └──→ upload-sbom-to-tpa (parallel)
-    </pre>
-    <p style="font-size: 0.85rem; color: #6a6e73;">
-      The same Tekton pipeline runs for both builds. The vulnerable build uses <code>--soft-fail</code> on ACS checks
-      so it deploys despite violations — letting you compare both side by side.
-    </p>
+  <div class="step">
+    <div class="step-num" style="background: var(--act-solution);">4</div>
+    <h3>Compare SBOMs in TPA</h3>
+    <p>The remediated build ran the same pipeline and uploaded its own SBOM. Compare the two side by side in TPA.</p>
+    <div class="look-for">
+      <strong>What to show</strong>
+      Find the remediated <em>catalog-app</em> SBOM. Compare CVE counts against the vulnerable one &mdash; critical and high should be zero. Same application, same pipeline, different dependency source.
+    </div>
+    <div class="step-links">
+      <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
+    </div>
   </div>
 
-</div>
+  <div class="step">
+    <div class="step-num" style="background: var(--act-solution);">5</div>
+    <h3>Compare Deployments in ACS</h3>
+    <p>Check the same ACS views again. The remediated deployment should have no policy violations and a lower risk score.</p>
+    <div class="look-for">
+      <strong>What to show</strong>
+      Filter violations by namespace &mdash; only the vulnerable deployment has violations. Then open the Risk view to compare risk scores between the two deployments side by side.
+    </div>
+    <div class="step-links">
+      <a href="${ACS_CONSOLE_URL}/main/violations" target="_blank">ACS &mdash; Violations</a>
+      <a href="${ACS_CONSOLE_URL}/main/risk" target="_blank">ACS &mdash; Deployment Risk</a>
+    </div>
+  </div>
+
+  <!-- ── ACT 3: ENFORCE ── -->
+
+  <div class="act-label enforce">Act 3 — Lock the Door</div>
+
+  <div class="step">
+    <div class="step-num" style="background: var(--act-enforce);">6</div>
+    <h3>Enable Build-Time Enforcement</h3>
+    <p>Now that a clean alternative exists, enforce the policy so vulnerable builds are blocked going forward. This is the shift from "detect" to "prevent."</p>
+    <div class="look-for">
+      <strong>What to show</strong>
+      Open ACS Policies. Find the "Lightwell Demo" policies. Edit each one: under Enforcement, enable <strong>Inform and enforce</strong> for the Build lifecycle. Save.
+    </div>
+    <div class="step-links">
+      <a href="${ACS_CONSOLE_URL}/main/policies" target="_blank">ACS &mdash; Policies</a>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num" style="background: var(--act-enforce);">7</div>
+    <h3>Prove It: Re-Run the Vulnerable Build</h3>
+    <p>Trigger the vulnerable pipeline again. This time, the ACS image check step should fail &mdash; the policy blocks the build before it can deploy.</p>
+    <div class="look-for">
+      <strong>What to show</strong>
+      Watch the pipeline run in OpenShift. It will fail at the <em>acs-image-check</em> step with policy violations. The vulnerable image never reaches the cluster.
+    </div>
+    <div class="step-links">
+      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
+    </div>
+    <p class="note">Or from the terminal: <code>make pipeline-vulnerable</code></p>
+  </div>
+
+  <!-- ── BONUS ── -->
+
+  <div class="act-label bonus">Bonus</div>
+
+  <div class="step">
+    <div class="step-num" style="background: var(--act-bonus);">+</div>
+    <h3>Live Exploit: CVE-2022-40152</h3>
+    <p>Demonstrate real-world impact. A tiny XML payload (&lt;1 KB) crashes the vulnerable app via Woodstox DTD recursion. The Lightwell-patched version rejects it cleanly at a depth limit.</p>
+    <div class="pipeline-box">./scripts/exploit-demo.sh \
+  http://catalog-vulnerable.${DEMO_NAMESPACE}.svc:8080 \
+  http://catalog-remediated.${DEMO_NAMESPACE}.svc:8080</div>
+    <p class="note">Requires terminal access. The vulnerable app returns HTTP 500 (StackOverflowError); the remediated app rejects the payload safely.</p>
+  </div>
+
+</div><!-- /timeline -->
+
+  <!-- Takeaways -->
+  <div class="takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li><strong>Drop-in replacement</strong> &mdash; no code changes, no version upgrades</li>
+      <li><strong>Critical CVEs eliminated</strong> at the dependency level by Lightwell Network</li>
+      <li><strong>Full SBOM visibility</strong> tracked and analyzed in Trusted Profile Analyzer</li>
+      <li><strong>Policy enforcement</strong> prevents vulnerable images from deploying via ACS</li>
+      <li><strong>Image signing</strong> with Sigstore/cosign for supply chain integrity</li>
+      <li><strong>SLSA Level 3</strong> build provenance for all Lightwell artifacts</li>
+    </ul>
+  </div>
+
+</div><!-- /demo-content -->
 
 </body>
 </html>

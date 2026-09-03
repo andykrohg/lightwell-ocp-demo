@@ -29,7 +29,5 @@
       ]
     }
   ],
-  "enforcementActions": [
-    "FAIL_BUILD_ENFORCEMENT"
-  ]
+  "enforcementActions": []
 }

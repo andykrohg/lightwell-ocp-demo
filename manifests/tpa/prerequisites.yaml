@@ -35,7 +35,7 @@ spec:
   accessModes: [ReadWriteOnce]
   resources:
     requests:
-      storage: 5Gi
+      storage: 10Gi
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -74,10 +74,10 @@ spec:
               mountPath: /var/lib/pgsql/data
           resources:
             requests:
-              memory: 256Mi
-              cpu: 100m
+              memory: 1Gi
+              cpu: 250m
             limits:
-              memory: 512Mi
+              memory: 2Gi
           readinessProbe:
             exec:
               command: ["psql", "-U", "trustify", "-d", "trustify", "-c", "SELECT 1"]

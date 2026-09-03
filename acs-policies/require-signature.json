@@ -22,7 +22,7 @@
           "negate": false,
           "values": [
             {
-              "value": "io.cosign"
+              "value": "REPLACED_BY_SETUP_SCRIPT"
             }
           ]
         }

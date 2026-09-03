@@ -74,25 +74,9 @@ echo "  Installing custom tasks..."
 oc apply -f "$PROJECT_DIR/tekton/tasks/"
 oc apply -f "$PROJECT_DIR/tekton/pipeline.yaml"
 
-banner "Step 5: Import ACS policies"
-for policy in "$PROJECT_DIR"/acs-policies/*.json; do
-  policy_name=$(jq -r .name "$policy")
-  echo -n "  Importing: $policy_name ... "
-  response=$(curl -sk -X POST "https://${ROX_CENTRAL_ENDPOINT}/v1/policies" \
-    -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d @"$policy" -w "%{http_code}" -o /dev/null 2>/dev/null) || true
-  if [ "$response" = "200" ] || [ "$response" = "201" ]; then
-    echo -e "${GREEN}OK${NC}"
-  elif [ "$response" = "409" ]; then
-    echo -e "${YELLOW}Already exists${NC}"
-  else
-    echo -e "${YELLOW}HTTP $response (may already exist)${NC}"
-  fi
-done
+banner "Step 5: Configure ACS integrations and policies"
 
-echo ""
-echo -n "  Registering in-cluster registry with ACS... "
+echo -n "  Registering in-cluster registry... "
 REG_RESPONSE=$(curl -sk -X POST "https://${ROX_CENTRAL_ENDPOINT}/v1/imageintegrations" \
   -H "Authorization: Bearer ${ROX_API_TOKEN}" \
   -H "Content-Type: application/json" \
@@ -109,10 +93,80 @@ REG_RESPONSE=$(curl -sk -X POST "https://${ROX_CENTRAL_ENDPOINT}/v1/imageintegra
 if [ "$REG_RESPONSE" = "200" ] || [ "$REG_RESPONSE" = "201" ]; then
   echo -e "${GREEN}OK${NC}"
 elif [ "$REG_RESPONSE" = "409" ]; then
-  echo -e "${YELLOW}Already exists${NC}"
+  echo -e "${YELLOW}already exists${NC}"
 else
   echo -e "${YELLOW}HTTP $REG_RESPONSE (may already exist)${NC}"
 fi
+
+echo -n "  Creating cosign signature integration... "
+COSIGN_PUB=$(oc get secret cosign-signing-key -n "$DEMO_NAMESPACE" -o jsonpath='{.data.cosign\.pub}' 2>/dev/null | base64 -d)
+SIG_RESPONSE=$(COSIGN_PUB="$COSIGN_PUB" python3 -c "
+import json, os
+pub = os.environ['COSIGN_PUB']
+print(json.dumps({'name':'Lightwell Demo Cosign','cosign':{'publicKeys':[{'name':'demo-signing-key','publicKeyPemEnc':pub}]}}))
+" | curl -sk -X POST "https://${ROX_CENTRAL_ENDPOINT}/v1/signatureintegrations" \
+  -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d @- 2>/dev/null)
+SIG_ID=$(echo "$SIG_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null) || true
+if [ -n "$SIG_ID" ]; then
+  echo -e "${GREEN}OK${NC} ($SIG_ID)"
+else
+  SIG_ID=$(curl -sk "https://${ROX_CENTRAL_ENDPOINT}/v1/signatureintegrations" \
+    -H "Authorization: Bearer ${ROX_API_TOKEN}" 2>/dev/null \
+    | python3 -c "import sys,json; [print(i['id']) for i in json.load(sys.stdin).get('integrations',[]) if i['name']=='Lightwell Demo Cosign']" 2>/dev/null) || true
+  if [ -n "$SIG_ID" ]; then
+    echo -e "${YELLOW}already exists${NC} ($SIG_ID)"
+  else
+    echo -e "${YELLOW}failed — signature policy will not work${NC}"
+  fi
+fi
+
+echo "  Importing policies (delete + recreate for idempotency)..."
+EXISTING_POLICIES=$(curl -sk "https://${ROX_CENTRAL_ENDPOINT}/v1/policies" \
+  -H "Authorization: Bearer ${ROX_API_TOKEN}" 2>/dev/null)
+
+import_policy() {
+  local policy_file="$1"
+  local policy_json="$2"
+  local policy_name
+  policy_name=$(echo "$policy_json" | jq -r .name)
+  echo -n "    $policy_name ... "
+
+  OLD_ID=$(echo "$EXISTING_POLICIES" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for p in data.get('policies', []):
+    if p['name'] == '$policy_name':
+        print(p['id'])
+        break
+" 2>/dev/null) || true
+
+  if [ -n "$OLD_ID" ]; then
+    curl -sk -X DELETE "https://${ROX_CENTRAL_ENDPOINT}/v1/policies/${OLD_ID}" \
+      -H "Authorization: Bearer ${ROX_API_TOKEN}" -o /dev/null 2>/dev/null || true
+  fi
+
+  response=$(curl -sk -X POST "https://${ROX_CENTRAL_ENDPOINT}/v1/policies" \
+    -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "$policy_json" -w "%{http_code}" -o /dev/null 2>/dev/null) || true
+  if [ "$response" = "200" ] || [ "$response" = "201" ]; then
+    echo -e "${GREEN}OK${NC}"
+  else
+    echo -e "${YELLOW}HTTP $response${NC}"
+  fi
+}
+
+for policy in "$PROJECT_DIR"/acs-policies/*.json; do
+  if [ "$(basename "$policy")" = "require-signature.json" ] && [ -n "$SIG_ID" ]; then
+    POLICY_JSON=$(jq --arg sig_id "$SIG_ID" \
+      '.policySections[0].policyGroups[0].values[0].value = $sig_id' "$policy")
+    import_policy "$policy" "$POLICY_JSON"
+  else
+    import_policy "$policy" "$(cat "$policy")"
+  fi
+done
 
 banner "Step 6: Grant pipeline service account permissions"
 oc adm policy add-role-to-user edit system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
