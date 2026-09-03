@@ -85,11 +85,11 @@ spec:
       importers:
         redhat-csaf-vex:
           period: 30m
-          source: https://security.access.redhat.com/.well-known/csaf/provider-metadata.json
+          source: https://access.redhat.com/security/data/csaf/v2/provider-metadata.json
           v3Signatures: true
         redhat-csaf:
           period: 30m
-          source: https://security.access.redhat.com/.well-known/csaf/provider-metadata.json
+          source: https://access.redhat.com/security/data/csaf/v2/provider-metadata.json
           v3Signatures: true
           onlyPrefixes:
             - cve-
