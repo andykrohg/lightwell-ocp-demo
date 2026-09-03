@@ -19,8 +19,6 @@ spec:
       type: string
       description: Full image reference to scan
   results:
-    - name: SCAN_OUTPUT
-      description: JSON scan results (truncated to fit Tekton result size)
     - name: CRITICAL_COUNT
       description: Number of critical severity CVEs
     - name: HIGH_COUNT
@@ -45,43 +43,25 @@ spec:
           --insecure-skip-tls-verify \
           --endpoint "$(params.ROX_CENTRAL_ENDPOINT)" \
           --image "$(params.IMAGE)" \
-          --output json > /tmp/scan-results.json 2>/tmp/scan-stderr.txt || true
+          --output table 2>&1 | tee /tmp/scan-table.txt || true
 
-        if [ ! -s /tmp/scan-results.json ]; then
-          echo "WARNING: Scan returned no results"
-          cat /tmp/scan-stderr.txt
-          printf "0" > "$(results.CRITICAL_COUNT.path)"
-          printf "0" > "$(results.HIGH_COUNT.path)"
-          printf "{}" > "$(results.SCAN_OUTPUT.path)"
-          exit 0
+        roxctl image scan \
+          --insecure-skip-tls-verify \
+          --endpoint "$(params.ROX_CENTRAL_ENDPOINT)" \
+          --image "$(params.IMAGE)" \
+          --output json 2>/dev/null > /tmp/scan-results.json || true
+
+        if [ -s /tmp/scan-results.json ]; then
+          CRITICAL=$(grep -c '"CRITICAL_VULNERABILITY_SEVERITY"' /tmp/scan-results.json 2>/dev/null || echo "0")
+          HIGH=$(grep -c '"IMPORTANT_VULNERABILITY_SEVERITY"' /tmp/scan-results.json 2>/dev/null || echo "0")
+        else
+          CRITICAL=0
+          HIGH=0
         fi
 
-        CRITICAL=$(python3 -c "
-        import json, sys
-        data = json.load(open('/tmp/scan-results.json'))
-        vulns = data.get('result', {}).get('vulnerabilities', [])
-        print(sum(1 for v in vulns if v.get('severity') == 'CRITICAL_VULNERABILITY_SEVERITY'))
-        " 2>/dev/null || echo "0")
-
-        HIGH=$(python3 -c "
-        import json, sys
-        data = json.load(open('/tmp/scan-results.json'))
-        vulns = data.get('result', {}).get('vulnerabilities', [])
-        print(sum(1 for v in vulns if v.get('severity') == 'IMPORTANT_VULNERABILITY_SEVERITY'))
-        " 2>/dev/null || echo "0")
-
+        echo ""
         echo "Critical CVEs: $CRITICAL"
         echo "High CVEs: $HIGH"
 
         printf "%s" "$CRITICAL" > "$(results.CRITICAL_COUNT.path)"
         printf "%s" "$HIGH" > "$(results.HIGH_COUNT.path)"
-
-        # Truncate scan output to fit in Tekton result (4096 bytes max)
-        head -c 4096 /tmp/scan-results.json > "$(results.SCAN_OUTPUT.path)"
-
-        # Print human-readable summary
-        roxctl image scan \
-          --insecure-skip-tls-verify \
-          --endpoint "$(params.ROX_CENTRAL_ENDPOINT)" \
-          --image "$(params.IMAGE)" \
-          --output table 2>/dev/null || true

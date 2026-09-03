@@ -37,7 +37,12 @@ spec:
       value: "false"
   workspaces:
     - name: shared-workspace
-      persistentVolumeClaim:
-        claimName: pipeline-workspace-pvc
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 5Gi
     - name: maven-settings
       emptyDir: {}

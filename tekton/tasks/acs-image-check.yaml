@@ -17,14 +17,11 @@ spec:
       description: ACS API token for authentication
     - name: IMAGE
       type: string
-      description: Full image reference to check (e.g. quay.io/org/app@sha256:abc123)
+      description: Full image reference to check
     - name: SOFT_FAIL
       type: string
       default: "false"
       description: When "true", policy violations do not fail the task
-  results:
-    - name: CHECK_OUTPUT
-      description: Summary of the policy check result
   steps:
     - name: image-check
       image: quay.io/stackrox-io/roxctl:latest
@@ -49,8 +46,6 @@ spec:
           --image "$(params.IMAGE)" \
           --output table 2>&1 | tee /tmp/check-output.txt
         CHECK_EXIT=$?
-
-        head -c 4096 /tmp/check-output.txt > "$(results.CHECK_OUTPUT.path)"
 
         if [ $CHECK_EXIT -ne 0 ]; then
           echo ""
