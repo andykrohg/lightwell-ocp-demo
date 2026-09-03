@@ -84,15 +84,17 @@ spec:
       image: {}
       importers:
         redhat-csaf-vex:
-          period: 30m
-          source: https://access.redhat.com/security/data/csaf/v2/provider-metadata.json
-          v3Signatures: true
+          csaf:
+            period: 30m
+            source: https://access.redhat.com/security/data/csaf/v2/provider-metadata.json
+            v3Signatures: true
         redhat-csaf:
-          period: 30m
-          source: https://access.redhat.com/security/data/csaf/v2/provider-metadata.json
-          v3Signatures: true
-          onlyPrefixes:
-            - cve-
+          csaf:
+            period: 30m
+            source: https://access.redhat.com/security/data/csaf/v2/provider-metadata.json
+            v3Signatures: true
+            onlyPrefixes:
+              - cve-
   openshift:
     useServiceCa: true
   ingress: {}

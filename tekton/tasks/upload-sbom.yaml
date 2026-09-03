@@ -39,8 +39,6 @@ spec:
   steps:
     - name: obtain-token-and-upload
       image: registry.access.redhat.com/ubi9/ubi-minimal:latest
-      securityContext:
-        runAsUser: 0
       script: |
         #!/usr/bin/env bash
         set -euo pipefail
@@ -62,10 +60,6 @@ spec:
 
         SBOM_FILE="$(workspaces.source.path)/$(params.SBOM_PATH)"
         if [ ! -f "$SBOM_FILE" ]; then
-          echo "DEBUG: Listing catalog-app/target/ contents:"
-          ls -la "$(workspaces.source.path)/catalog-app/target/" 2>&1 || echo "  directory does not exist"
-          echo "DEBUG: Searching for bom files:"
-          find "$(workspaces.source.path)" -name "bom*" -type f 2>/dev/null || echo "  none found"
           echo "ERROR: SBOM file not found at $SBOM_FILE"
           printf "failure" > "$(results.STATUS.path)"
           exit 1
