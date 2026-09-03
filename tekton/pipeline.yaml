@@ -122,6 +122,8 @@ spec:
           value: $(params.TPA_CLIENT_ID)
         - name: TPA_CLIENT_SECRET
           value: $(params.TPA_CLIENT_SECRET)
+        - name: VARIANT
+          value: $(params.MAVEN_PROFILE)
       workspaces:
         - name: source
           workspace: shared-workspace

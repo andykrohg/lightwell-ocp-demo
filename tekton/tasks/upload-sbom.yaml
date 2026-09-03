@@ -28,6 +28,10 @@ spec:
     - name: TPA_CLIENT_SECRET
       type: string
       description: OIDC client secret for TPA
+    - name: VARIANT
+      type: string
+      default: ""
+      description: Build variant label (e.g. vulnerable, remediated) applied to the SBOM in TPA
   workspaces:
     - name: source
       description: Workspace containing the built project with SBOM
@@ -65,9 +69,16 @@ spec:
           exit 1
         fi
 
-        echo "=== Uploading SBOM to $(params.TPA_URL)/api/v3/sbom ==="
+        UPLOAD_URL="$(params.TPA_URL)/api/v3/sbom"
+        VARIANT="$(params.VARIANT)"
+        if [ -n "$VARIANT" ]; then
+          UPLOAD_URL="${UPLOAD_URL}?labels.variant=${VARIANT}"
+          echo "Labeling SBOM with variant=$VARIANT"
+        fi
+
+        echo "=== Uploading SBOM to ${UPLOAD_URL} ==="
         HTTP_CODE=$(curl -s -o /tmp/upload-response.json -w "%{http_code}" \
-          -X POST "$(params.TPA_URL)/api/v3/sbom" \
+          -X POST "${UPLOAD_URL}" \
           -H "Authorization: Bearer $TOKEN" \
           -H "Content-Type: application/json" \
           --data-binary @"$SBOM_FILE")
