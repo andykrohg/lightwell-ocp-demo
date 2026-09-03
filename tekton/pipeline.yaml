@@ -103,26 +103,7 @@ spec:
         - name: maven-settings
           workspace: maven-settings
 
-    # 3. Build container image (parallel with SBOM upload)
-    - name: buildah
-      runAfter:
-        - maven-build
-      taskRef:
-        name: buildah
-      params:
-        - name: IMAGE
-          value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
-        - name: DOCKERFILE
-          value: catalog-app/Containerfile.pipeline
-        - name: CONTEXT
-          value: catalog-app
-        - name: TLSVERIFY
-          value: "false"
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-
-    # 4. Upload SBOM to TPA (parallel with buildah)
+    # 3. Upload SBOM to TPA (before buildah to avoid SELinux conflict on shared PVC)
     - name: upload-sbom
       runAfter:
         - maven-build
@@ -141,6 +122,25 @@ spec:
           value: $(params.TPA_CLIENT_ID)
         - name: TPA_CLIENT_SECRET
           value: $(params.TPA_CLIENT_SECRET)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    # 4. Build container image (after SBOM upload)
+    - name: buildah
+      runAfter:
+        - upload-sbom
+      taskRef:
+        name: buildah
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
+        - name: DOCKERFILE
+          value: catalog-app/Containerfile.pipeline
+        - name: CONTEXT
+          value: catalog-app
+        - name: TLSVERIFY
+          value: "false"
       workspaces:
         - name: source
           workspace: shared-workspace

@@ -39,6 +39,8 @@ spec:
   steps:
     - name: obtain-token-and-upload
       image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      securityContext:
+        runAsUser: 0
       script: |
         #!/usr/bin/env bash
         set -euo pipefail
