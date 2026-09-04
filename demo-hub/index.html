@@ -277,10 +277,10 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-enforce);">6</div>
     <h3>Enable VEX Enforcement</h3>
-    <p>Now that a clean alternative exists, enforce the VEX check so builds with unresolved high-severity vulnerabilities are blocked. This is the shift from "detect" to "prevent."</p>
+    <p>Now that a clean alternative exists, require that builds include verified VEX remediation data. Builds that ship unvetted dependencies &mdash; with zero VEX suppressions &mdash; are blocked. This is the shift from "detect" to "prevent."</p>
     <div class="look-for">
       <strong>What to show</strong>
-      The pipeline is re-triggered with <code>VEX_FAIL_ON=high</code>. Since the vulnerable build's dependencies don't match any VEX statements, the high-severity CVEs remain &mdash; and the vex-check step <strong>fails the build</strong>.
+      The pipeline is re-triggered with <code>REQUIRE_VEX=true</code>. Since the vulnerable build's dependencies don't match any VEX statements, zero CVEs are suppressed &mdash; and the vex-check step <strong>fails the build</strong>.
     </div>
     <div class="step-links">
       <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>

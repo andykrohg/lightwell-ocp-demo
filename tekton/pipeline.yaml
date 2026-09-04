@@ -55,10 +55,10 @@ spec:
       type: string
       default: "false"
       description: When true, ACS policy violations do not block the pipeline
-    - name: VEX_FAIL_ON
+    - name: REQUIRE_VEX
       type: string
-      default: ""
-      description: Fail the VEX check if vulnerabilities at this severity or higher remain after VEX (critical, high, medium, low)
+      default: "false"
+      description: When true, fail the build if VEX data does not suppress any vulnerabilities
   workspaces:
     - name: shared-workspace
       description: Workspace shared across pipeline tasks
@@ -118,8 +118,8 @@ spec:
           value: catalog-app/target/bom.json
         - name: VEX_PATH
           value: vex/lightwell-remediated.openvex.json
-        - name: FAIL_ON
-          value: $(params.VEX_FAIL_ON)
+        - name: REQUIRE_VEX
+          value: $(params.REQUIRE_VEX)
       workspaces:
         - name: source
           workspace: shared-workspace

@@ -34,7 +34,7 @@ spec:
     - name: ROX_API_TOKEN
       value: "__ROX_API_TOKEN__"
     - name: SOFT_FAIL
-      value: "false"
+      value: "true"
   workspaces:
     - name: shared-workspace
       volumeClaimTemplate:

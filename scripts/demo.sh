@@ -182,19 +182,19 @@ banner "ACT 3: LOCK THE DOOR"
 narrate "We've shown that Lightwell eliminates the CVEs and that VEX data"
 narrate "lets the pipeline distinguish real vulnerabilities from resolved ones."
 narrate ""
-narrate "Now let's enforce it: configure the pipeline so that builds with"
-narrate "unresolved high-severity vulnerabilities are blocked."
+narrate "Now let's enforce it: require that builds include verified"
+narrate "VEX remediation data before they can proceed."
 echo ""
-narrate "We'll re-run the vulnerable build with VEX enforcement enabled."
+narrate "We'll re-run the vulnerable build with REQUIRE_VEX enabled."
 narrate "Since the vulnerable dependencies don't match any VEX statements,"
-narrate "the CVEs remain — and the pipeline will fail at the vex-check step."
+narrate "zero CVEs are suppressed — and the pipeline will fail."
 pause
 
-narrate "Triggering the vulnerable build with VEX enforcement (FAIL_ON=high)..."
+narrate "Triggering the vulnerable build with VEX enforcement (REQUIRE_VEX=true)..."
 echo ""
 sed_pipelinerun "$PROJECT_DIR/tekton/pipelinerun-vulnerable.yaml" \
   | sed 's/value: "true"/value: "false"/' \
-  | awk '/name: SOFT_FAIL/{print; getline; print; print "    - name: VEX_FAIL_ON"; print "      value: \"high\""; next}1' \
+  | awk '/name: SOFT_FAIL/{print; getline; print; print "    - name: REQUIRE_VEX"; print "      value: \"true\""; next}1' \
   | oc create -n "$NAMESPACE" -f -
 echo ""
 narrate "Watch the pipeline — it should fail at the vex-check step."
@@ -208,11 +208,12 @@ tkn pipelinerun logs -f --last -n "$NAMESPACE" 2>/dev/null || \
   narrate "(Pipeline logs not available — check OpenShift console)"
 pause
 
-narrate "The vulnerable build was blocked. High-severity CVEs remain"
-narrate "because VEX doesn't cover the unpatched Maven Central versions."
+narrate "The vulnerable build was blocked. VEX data didn't match any of"
+narrate "the standard Maven Central versions, so zero CVEs were suppressed."
 echo ""
-narrate "Meanwhile, the remediated build would pass this same check —"
-narrate "Lightwell's VEX data suppresses those findings."
+narrate "Meanwhile, the remediated build passes this same check —"
+narrate "Lightwell's VEX data suppresses 6 known CVEs, proving the"
+narrate "dependencies include verified remediation."
 echo ""
 narrate "Combined with cosign image signing (which runs on every build),"
 narrate "the pipeline now ensures:"

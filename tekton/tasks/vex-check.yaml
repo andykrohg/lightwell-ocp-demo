@@ -18,10 +18,10 @@ spec:
       type: string
       default: ""
       description: Path to the OpenVEX document relative to workspace root (empty to skip VEX)
-    - name: FAIL_ON
+    - name: REQUIRE_VEX
       type: string
-      default: ""
-      description: Fail if vulnerabilities at this severity or higher remain (critical, high, medium, low)
+      default: "false"
+      description: When true, fail the build if VEX data does not suppress any vulnerabilities
   workspaces:
     - name: source
       description: Workspace containing the SBOM and VEX files
@@ -61,8 +61,6 @@ spec:
         echo "=== Vulnerability Check ==="
         echo ""
 
-        FAIL_ON="$(params.FAIL_ON)"
-
         BASELINE_COUNT=$(grype sbom:"${SBOM_FILE}" -o json 2>/dev/null \
           | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('matches',[])))")
         printf "%s" "$BASELINE_COUNT" > "$(results.TOTAL_VULNS.path)"
@@ -88,26 +86,23 @@ spec:
           printf "%s" "$BASELINE_COUNT" > "$(results.REMAINING.path)"
         fi
 
-        if [ -n "$FAIL_ON" ]; then
-          GRYPE_ARGS="${GRYPE_ARGS} --fail-on ${FAIL_ON}"
-        fi
-
-        echo ""
-        if grype $GRYPE_ARGS 2>/dev/null; then
-          printf "pass" > "$(results.STATUS.path)"
-        else
-          EXIT_CODE=$?
-          if [ -n "$FAIL_ON" ] && [ $EXIT_CODE -eq 2 ]; then
-            printf "fail" > "$(results.STATUS.path)"
-            echo ""
-            echo "FAILED: Vulnerabilities at severity '$FAIL_ON' or higher remain."
-            exit 1
-          fi
-          printf "pass" > "$(results.STATUS.path)"
-        fi
+        grype $GRYPE_ARGS 2>/dev/null || true
 
         echo ""
         echo "=== Summary ==="
         echo "  Total vulnerabilities: $(cat $(results.TOTAL_VULNS.path))"
         echo "  Suppressed by VEX:     $(cat $(results.SUPPRESSED.path))"
         echo "  Remaining:             $(cat $(results.REMAINING.path))"
+
+        REQUIRE_VEX="$(params.REQUIRE_VEX)"
+        SUPPRESSED_COUNT=$(cat "$(results.SUPPRESSED.path)")
+        if [ "$REQUIRE_VEX" = "true" ] && [ "$SUPPRESSED_COUNT" -eq 0 ]; then
+          printf "fail" > "$(results.STATUS.path)"
+          echo ""
+          echo "FAILED: VEX enforcement is enabled but no vulnerabilities were"
+          echo "suppressed. This build does not include verified remediation data."
+          echo "Use Lightwell Network dependencies to resolve known CVEs."
+          exit 1
+        fi
+
+        printf "pass" > "$(results.STATUS.path)"

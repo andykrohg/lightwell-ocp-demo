@@ -44,7 +44,7 @@ SBOM tracking, and image signing to demonstrate a complete secure supply chain.
 |-----|-------------|
 | **1 — The Problem** | Build with standard Maven Central deps → pipeline VEX check shows all CVEs unresolved; TPA tracks the SBOM; ACS flags violations |
 | **2 — The Fix** | Rebuild with Lightwell Network `.rhlw` deps + VEX data → VEX check suppresses 8 patched CVEs; exploit demo proves functional fix |
-| **3 — Lock the Door** | Enable VEX enforcement (`FAIL_ON=high`) → vulnerable build blocked at vex-check; only verified builds proceed |
+| **3 — Lock the Door** | Enable VEX enforcement (`REQUIRE_VEX=true`) → vulnerable build blocked (zero VEX suppressions); remediated build passes |
 
 ## Prerequisites
 
@@ -168,8 +168,9 @@ repository.
 evaluates the SBOM against known CVE databases, then applies Lightwell's VEX
 data to suppress findings for patched dependencies. For the vulnerable build,
 all CVEs remain. For the remediated build, the 8 Lightwell-covered CVEs are
-suppressed. The `VEX_FAIL_ON` pipeline parameter enables enforcement — when set
-to `high`, builds with unresolved high-severity CVEs are blocked.
+suppressed. The `REQUIRE_VEX` pipeline parameter enables enforcement — when set
+to `true`, builds where VEX suppresses zero vulnerabilities are blocked,
+ensuring only builds with verified remediation data can proceed.
 
 **Trusted Profile Analyzer** — The pipeline uploads a CycloneDX SBOM (generated
 by the `cyclonedx-maven-plugin`) to TPA after each build. Lightwell's CSAF VEX
