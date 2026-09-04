@@ -187,6 +187,22 @@
         "known_not_affected": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"]
       },
       "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"] }]
+    },
+    {
+      "cve": "CVE-2025-41249",
+      "notes": [{ "category": "description", "text": "Spring Framework vulnerability — fixed in Lightwell build 5.3.18.rhlw-00003." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"] }]
+    },
+    {
+      "cve": "CVE-2026-41848",
+      "notes": [{ "category": "description", "text": "Spring Framework vulnerability — fixed in Lightwell build 5.3.18.rhlw-00003." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"] }]
     }
   ]
 }

@@ -238,7 +238,7 @@
           <td><strong>Spring Core</strong><br><code>org.springframework:spring-core</code></td>
           <td><span class="badge badge-red">5.3.18</span></td>
           <td><span class="badge badge-green">5.3.18.rhlw-00003</span></td>
-          <td><span class="badge badge-cve">CVE-2022-22968</span> <span class="badge badge-cve">CVE-2023-20861</span></td>
+          <td><span class="badge badge-cve">CVE-2025-41249</span> <span class="badge badge-cve">CVE-2026-41848</span></td>
         </tr>
       </tbody>
     </table>
@@ -247,7 +247,7 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-solution);">4</div>
     <h3>Compare VEX Check Results</h3>
-    <p>The remediated build runs the same pipeline. This time, Lightwell's VEX data is applied during the vex-check step. The 8 CVEs covered by VEX are <strong>suppressed</strong> &mdash; they're confirmed as patched in the <code>.rhlw</code> builds.</p>
+    <p>The remediated build runs the same pipeline. This time, Lightwell's VEX data is applied during the vex-check step. The 6 CVEs covered by VEX are <strong>suppressed</strong> &mdash; they're confirmed as patched in the <code>.rhlw</code> builds.</p>
     <div class="look-for">
       <strong>What to show</strong>
       In the pipeline run logs, find the <em>vex-check</em> step. Compare the summary line: <em>Total vulnerabilities &rarr; Suppressed by VEX &rarr; Remaining</em>. The 8 Lightwell-covered CVEs should be suppressed, leaving only unrelated findings.

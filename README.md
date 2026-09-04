@@ -128,7 +128,7 @@ lightwell-ocp-demo/
 | woodstox-core | 6.0.3 | 6.0.3.rhlw-00001 | CVE-2022-40152, CVE-2022-40156 |
 | json-path | 2.7.0 | 2.7.0.rhlw-00001 | CVE-2023-51074, CVE-2023-1370 |
 | org.json | 20220320 | 20220320.0.0.rhlw-00003 | CVE-2022-45688, CVE-2023-5072 |
-| spring-core | 5.3.18 | 5.3.18.rhlw-00003 | CVE-2022-22968, CVE-2023-20861 |
+| spring-core | 5.3.18 | 5.3.18.rhlw-00003 | CVE-2025-41249, CVE-2026-41848 |
 
 ## Container Images
 
