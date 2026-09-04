@@ -36,9 +36,9 @@ spec:
       description: Overall check status (pass or fail)
   steps:
     - name: scan
-      image: docker.io/anchore/grype:latest
+      image: docker.io/anchore/grype:latest-debug
       script: |
-        #!/usr/bin/env sh
+        #!/busybox/sh
         set -eu
 
         SBOM_FILE="$(workspaces.source.path)/$(params.SBOM_PATH)"
