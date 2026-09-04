@@ -7,8 +7,8 @@ Red Hat Advanced Developer Suite.
 
 The demo deploys a Java microservice in two variants — one built with standard
 Maven Central dependencies containing known critical CVEs, and one rebuilt with
-Lightwell Network remediated dependencies — then walks through the security
-posture of each using the native TPA, ACS, and OpenShift consoles.
+Lightwell Network remediated dependencies — then uses VEX-aware scanning,
+SBOM tracking, and image signing to demonstrate a complete secure supply chain.
 
 ## Architecture
 
@@ -23,16 +23,17 @@ posture of each using the native TPA, ACS, and OpenShift consoles.
 │         │                 │                                     │
 │  ┌──────┴─────────────────┴───────────────────────────────┐    │
 │  │              Tekton Pipeline                            │    │
-│  │  git-clone → maven-build → buildah → cosign-sign ─┐    │    │
-│  │                  │                   acs-check ────┤→ deploy │
-│  │                  └─ upload-sbom      acs-scan ─────┘    │    │
+│  │  git-clone → maven-build ─┬─ vex-check                 │    │
+│  │                           ├─ upload-sbom               │    │
+│  │                           └─ buildah → cosign-sign ─┐  │    │
+│  │                                       acs-check ────┤→ deploy│
+│  │                                       acs-scan ─────┘  │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  ┌────────────────────┐  ┌─────────────────────────────────┐   │
 │  │        ACS         │  │  Trusted Profile Analyzer (TPA) │   │
-│  │  Policy violations │  │  SBOM & vulnerability analysis  │   │
-│  │  Image scanning    │  │                                 │   │
-│  │  Risk scoring      │  │                                 │   │
+│  │  Signature policy  │  │  SBOM & vulnerability tracking  │   │
+│  │  CVE monitoring    │  │  VEX advisory storage           │   │
 │  └────────────────────┘  └─────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -41,9 +42,9 @@ posture of each using the native TPA, ACS, and OpenShift consoles.
 
 | Act | What Happens |
 |-----|-------------|
-| **1 — The Problem** | Build with standard Maven Central deps → TPA shows CVEs in woodstox, json-path, org.json, and spring-core; ACS fires policy violations |
-| **2 — The Solution** | Rebuild with Lightwell Network `.rhlw` deps → same versions, same API, backported patches |
-| **3 — Verified** | TPA shows 0 critical CVEs, ACS policies pass, image signed, SBOM tracked |
+| **1 — The Problem** | Build with standard Maven Central deps → pipeline VEX check shows all CVEs unresolved; TPA tracks the SBOM; ACS flags violations |
+| **2 — The Fix** | Rebuild with Lightwell Network `.rhlw` deps + VEX data → VEX check suppresses 8 patched CVEs; exploit demo proves functional fix |
+| **3 — Lock the Door** | Enable VEX enforcement (`FAIL_ON=high`) → vulnerable build blocked at vex-check; only verified builds proceed |
 
 ## Prerequisites
 
@@ -103,16 +104,19 @@ lightwell-ocp-demo/
 ├── demo-hub/             Static landing page with links to native UIs
 │   ├── index.html        Narrative + dependency table + deep links to TPA/ACS/OCP
 │   └── Containerfile     UBI9 nginx, URLs injected via envsubst
+├── vex/                  VEX (Vulnerability Exploitability eXchange) data
+│   ├── lightwell-remediated.openvex.json   OpenVEX for pipeline vex-check
+│   └── lightwell-remediated.json           CSAF VEX for TPA advisory upload
 ├── tekton/               Tekton CI pipeline
-│   ├── pipeline.yaml     git-clone → build → sign → scan → deploy
-│   ├── tasks/            Custom tasks: upload-sbom, acs-image-check/scan, cosign-sign
+│   ├── pipeline.yaml     git-clone → build → vex-check → sign → scan → deploy
+│   ├── tasks/            Custom tasks: vex-check, upload-sbom, acs-image-check/scan, cosign-sign
 │   └── pipelinerun-*.yaml  Pre-configured runs for each variant
 ├── acs-policies/         ACS policy definitions (imported during setup)
 ├── manifests/
 │   ├── base/             Kustomize base (catalog-app, dashboard)
 │   ├── overlays/         Per-variant overlays (vulnerable, remediated, dashboard)
 │   └── tpa/              TPA prerequisites + CR (used by install-tpa.sh)
-├── scripts/              setup.sh, demo.sh (guided), reset.sh, resolve-env.sh
+├── scripts/              setup.sh, demo.sh (guided), reset.sh, exploit-demo.sh
 ├── demo.env.example      Environment config template (only ROX_API_TOKEN required)
 └── Makefile              Build and deploy targets
 ```
@@ -156,17 +160,26 @@ make status                  Show deployment status
 pulls dependencies from the Lightwell Network public demo repository at
 `packages.redhat.com` with `.rhlw-NNNNN` version suffixes. These are the same
 upstream versions with backported security patches, SLSA L3 provenance, and
-Sigstore signatures. No credentials required for the demo repository.
+Sigstore signatures. Lightwell also publishes VEX data declaring these packages
+as `not_affected` for the original CVEs. No credentials required for the demo
+repository.
 
-**Trusted Profile Analyzer** — The Tekton pipeline uploads a CycloneDX SBOM
-(generated by the `cyclonedx-maven-plugin`) to TPA after each build. During the
-demo, the presenter opens the TPA console to compare vulnerability counts
-between the two SBOMs.
+**VEX Check** — The pipeline includes a VEX-aware vulnerability scan step that
+evaluates the SBOM against known CVE databases, then applies Lightwell's VEX
+data to suppress findings for patched dependencies. For the vulnerable build,
+all CVEs remain. For the remediated build, the 8 Lightwell-covered CVEs are
+suppressed. The `VEX_FAIL_ON` pipeline parameter enables enforcement — when set
+to `high`, builds with unresolved high-severity CVEs are blocked.
 
-**Advanced Cluster Security** — Three custom ACS policies are imported during
-setup: block critical CVEs (CVSS >= 9.0), block specific CVEs (woodstox,
-json-path, org.json, spring-core), and require image signatures. The vulnerable
-build triggers violations; the remediated build passes clean.
+**Trusted Profile Analyzer** — The pipeline uploads a CycloneDX SBOM (generated
+by the `cyclonedx-maven-plugin`) to TPA after each build. Lightwell's CSAF VEX
+document is uploaded during setup. TPA provides SBOM tracking and advisory
+visibility across both build variants.
+
+**Advanced Cluster Security** — CVE watch policies (inform-only) flag known
+vulnerabilities across deployments. A signature verification policy ensures only
+cosign-signed images from the trusted pipeline can deploy. ACS provides runtime
+monitoring and risk scoring for both deployment variants.
 
 ## Notes
 

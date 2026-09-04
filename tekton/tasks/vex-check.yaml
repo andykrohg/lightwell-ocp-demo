@@ -1,0 +1,104 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: vex-check
+  labels:
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  description: >
+    Scans an SBOM for known vulnerabilities and applies VEX (Vulnerability
+    Exploitability eXchange) data to identify which findings have been resolved
+    by the dependency supplier. Outputs a summary of remaining vs suppressed CVEs.
+  params:
+    - name: SBOM_PATH
+      type: string
+      default: target/bom.json
+      description: Path to the CycloneDX SBOM relative to workspace root
+    - name: VEX_PATH
+      type: string
+      default: ""
+      description: Path to the OpenVEX document relative to workspace root (empty to skip VEX)
+    - name: FAIL_ON
+      type: string
+      default: ""
+      description: Fail if vulnerabilities at this severity or higher remain (critical, high, medium, low)
+  workspaces:
+    - name: source
+      description: Workspace containing the SBOM and VEX files
+  results:
+    - name: TOTAL_VULNS
+      description: Total vulnerabilities found before VEX
+    - name: SUPPRESSED
+      description: Number of vulnerabilities suppressed by VEX
+    - name: REMAINING
+      description: Number of vulnerabilities remaining after VEX
+    - name: STATUS
+      description: Overall check status (pass or fail)
+  steps:
+    - name: scan
+      image: docker.io/anchore/grype:latest
+      script: |
+        #!/usr/bin/env sh
+        set -eu
+
+        SBOM_FILE="$(workspaces.source.path)/$(params.SBOM_PATH)"
+        VEX_FILE=""
+        if [ -n "$(params.VEX_PATH)" ]; then
+          VEX_FILE="$(workspaces.source.path)/$(params.VEX_PATH)"
+        fi
+
+        if [ ! -f "$SBOM_FILE" ]; then
+          echo "ERROR: SBOM not found at $SBOM_FILE"
+          printf "failure" > "$(results.STATUS.path)"
+          exit 1
+        fi
+
+        echo "=== Vulnerability Check ==="
+        echo ""
+
+        GRYPE_ARGS="sbom:${SBOM_FILE} -o table"
+        FAIL_ON="$(params.FAIL_ON)"
+        if [ -n "$FAIL_ON" ]; then
+          GRYPE_ARGS="${GRYPE_ARGS} --fail-on ${FAIL_ON}"
+        fi
+
+        # Run without VEX first to get baseline count
+        BASELINE_COUNT=$(grype sbom:"${SBOM_FILE}" -o json 2>/dev/null | grep -c '"id":' || echo "0")
+        printf "%s" "$BASELINE_COUNT" > "$(results.TOTAL_VULNS.path)"
+
+        if [ -n "$VEX_FILE" ] && [ -f "$VEX_FILE" ]; then
+          echo "Applying VEX data from $(params.VEX_PATH)"
+          echo ""
+          GRYPE_ARGS="${GRYPE_ARGS} --vex ${VEX_FILE}"
+
+          # Run with VEX to get remaining count
+          REMAINING_COUNT=$(grype sbom:"${SBOM_FILE}" --vex "${VEX_FILE}" -o json 2>/dev/null | grep -c '"id":' || echo "0")
+          SUPPRESSED=$((BASELINE_COUNT - REMAINING_COUNT))
+          if [ $SUPPRESSED -lt 0 ]; then SUPPRESSED=0; fi
+
+          printf "%s" "$SUPPRESSED" > "$(results.SUPPRESSED.path)"
+          printf "%s" "$REMAINING_COUNT" > "$(results.REMAINING.path)"
+        else
+          echo "No VEX data provided — showing raw scan results"
+          echo ""
+          printf "0" > "$(results.SUPPRESSED.path)"
+          printf "%s" "$BASELINE_COUNT" > "$(results.REMAINING.path)"
+        fi
+
+        # Run the visible scan (with VEX if available)
+        if grype $GRYPE_ARGS 2>/dev/null; then
+          printf "pass" > "$(results.STATUS.path)"
+        else
+          printf "fail" > "$(results.STATUS.path)"
+          if [ -n "$FAIL_ON" ]; then
+            echo ""
+            echo "FAILED: Vulnerabilities at severity '$FAIL_ON' or higher remain."
+            exit 1
+          fi
+        fi
+
+        echo ""
+        echo "=== Summary ==="
+        echo "  Total vulnerabilities: $(cat $(results.TOTAL_VULNS.path))"
+        echo "  Suppressed by VEX:     $(cat $(results.SUPPRESSED.path))"
+        echo "  Remaining:             $(cat $(results.REMAINING.path))"

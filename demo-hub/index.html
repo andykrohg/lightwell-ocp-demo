@@ -172,29 +172,28 @@
 
   <div class="step">
     <div class="step-num" style="background: var(--act-problem);">1</div>
-    <h3>Examine the Vulnerable SBOM</h3>
-    <p>A catalog microservice was built with standard Maven Central dependencies and its SBOM was uploaded to Trusted Profile Analyzer. Several of those dependencies contain known CVEs.</p>
+    <h3>Build the Vulnerable App</h3>
+    <p>A catalog microservice is built with standard Maven Central dependencies. The pipeline runs a <strong>VEX check</strong> that scans the SBOM for known vulnerabilities.</p>
     <div class="look-for">
       <strong>What to show</strong>
-      Open the SBOM Browser. Find the <em>catalog-app</em> SBOM tagged <em>vulnerable</em>. Click into it and check the matched advisories &mdash; note the critical and high severity CVE counts.
+      Watch the pipeline run in OpenShift. In the <em>vex-check</em> step logs, note the full list of CVEs found. No VEX data applies to the standard Maven Central versions, so all vulnerabilities remain in the findings.
     </div>
     <div class="step-links">
-      <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
-      <a href="${TPA_CONSOLE_URL}/advisories" target="_blank">TPA &mdash; Advisories</a>
+      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
     </div>
   </div>
 
   <div class="step">
     <div class="step-num" style="background: var(--act-problem);">2</div>
-    <h3>See the Violations in ACS</h3>
-    <p>Advanced Cluster Security detected policy violations against the vulnerable image. The policies are in <strong>inform</strong> mode &mdash; violations are flagged but not blocked, so the app deployed anyway.</p>
+    <h3>Examine the Results</h3>
+    <p>The SBOM was uploaded to Trusted Profile Analyzer for tracking, and ACS flagged policy violations against the vulnerable image. Since policies are in <strong>inform</strong> mode, the app deployed despite its vulnerabilities.</p>
     <div class="look-for">
       <strong>What to show</strong>
-      Filter violations by namespace <code>${DEMO_NAMESPACE}</code>. Note the policy violations fired by the vulnerable deployment. Then check Image Vulnerabilities for the full CVE breakdown.
+      In TPA, find the <em>catalog-app</em> SBOM tagged <em>vulnerable</em> and check matched advisories. In ACS, filter violations by namespace <code>${DEMO_NAMESPACE}</code> and note the CVE-based policy violations.
     </div>
     <div class="step-links">
+      <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
       <a href="${ACS_CONSOLE_URL}/main/violations" target="_blank">ACS &mdash; Violations</a>
-      <a href="${ACS_CONSOLE_URL}/main/vulnerability-management/images" target="_blank">ACS &mdash; Image Vulnerabilities</a>
     </div>
   </div>
 
@@ -206,6 +205,7 @@
     <div class="step-num" style="background: var(--act-solution);">3</div>
     <h3>Lightwell Network: Drop-In Remediated Dependencies</h3>
     <p>Lightwell provides the same dependency versions with backported security patches. No code changes, no API breaks &mdash; just a different Maven repository. The version suffix <code>.rhlw-NNNNN</code> indicates a patched build.</p>
+    <p>Lightwell also publishes <strong>VEX</strong> (Vulnerability Exploitability eXchange) data for its remediated packages. VEX tells downstream tooling: <em>"this CVE has been resolved in this build &mdash; the vulnerable code is not present."</em></p>
     <table class="dep-table">
       <thead>
         <tr>
@@ -246,29 +246,28 @@
 
   <div class="step">
     <div class="step-num" style="background: var(--act-solution);">4</div>
-    <h3>Compare SBOMs in TPA</h3>
-    <p>The remediated build ran the same pipeline and uploaded its own SBOM. Compare the two side by side in TPA.</p>
+    <h3>Compare VEX Check Results</h3>
+    <p>The remediated build runs the same pipeline. This time, Lightwell's VEX data is applied during the vex-check step. The 8 CVEs covered by VEX are <strong>suppressed</strong> &mdash; they're confirmed as patched in the <code>.rhlw</code> builds.</p>
     <div class="look-for">
       <strong>What to show</strong>
-      Find the remediated <em>catalog-app</em> SBOM. Compare CVE counts against the vulnerable one &mdash; critical and high should be zero. Same application, same pipeline, different dependency source.
+      In the pipeline run logs, find the <em>vex-check</em> step. Compare the summary line: <em>Total vulnerabilities &rarr; Suppressed by VEX &rarr; Remaining</em>. The 8 Lightwell-covered CVEs should be suppressed, leaving only unrelated findings.
     </div>
     <div class="step-links">
+      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
       <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
     </div>
   </div>
 
   <div class="step">
     <div class="step-num" style="background: var(--act-solution);">5</div>
-    <h3>Compare Deployments in ACS</h3>
-    <p>Check the same ACS views again. The remediated deployment should have no policy violations and a lower risk score.</p>
+    <h3>Live Exploit: CVE-2022-40152</h3>
+    <p>Prove the remediation works functionally. A tiny XML payload (&lt;1 KB) exploits Woodstox DTD recursion to crash the vulnerable app. The Lightwell-patched version rejects it safely at a depth limit.</p>
+    <div class="pipeline-box">./scripts/exploit-demo.sh</div>
     <div class="look-for">
       <strong>What to show</strong>
-      Filter violations by namespace &mdash; only the vulnerable deployment has violations. Then open the Risk view to compare risk scores between the two deployments side by side.
+      The vulnerable app returns HTTP 500 (StackOverflowError). The remediated app handles the same payload cleanly &mdash; same version, same API, different security posture.
     </div>
-    <div class="step-links">
-      <a href="${ACS_CONSOLE_URL}/main/violations" target="_blank">ACS &mdash; Violations</a>
-      <a href="${ACS_CONSOLE_URL}/main/risk" target="_blank">ACS &mdash; Deployment Risk</a>
-    </div>
+    <p class="note">Requires terminal access to the cluster.</p>
   </div>
 
   <!-- ── ACT 3: ENFORCE ── -->
@@ -277,43 +276,31 @@
 
   <div class="step">
     <div class="step-num" style="background: var(--act-enforce);">6</div>
-    <h3>Enable Build-Time Enforcement</h3>
-    <p>Now that a clean alternative exists, enforce the policy so vulnerable builds are blocked going forward. This is the shift from "detect" to "prevent."</p>
+    <h3>Enable VEX Enforcement</h3>
+    <p>Now that a clean alternative exists, enforce the VEX check so builds with unresolved high-severity vulnerabilities are blocked. This is the shift from "detect" to "prevent."</p>
     <div class="look-for">
       <strong>What to show</strong>
-      Open ACS Policies. Find the "Lightwell Demo" policies. Edit each one: under Enforcement, enable <strong>Inform and enforce</strong> for the Build lifecycle. Save.
+      The pipeline is re-triggered with <code>VEX_FAIL_ON=high</code>. Since the vulnerable build's dependencies don't match any VEX statements, the high-severity CVEs remain &mdash; and the vex-check step <strong>fails the build</strong>.
     </div>
     <div class="step-links">
-      <a href="${ACS_CONSOLE_URL}/main/policies" target="_blank">ACS &mdash; Policies</a>
+      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
     </div>
   </div>
 
   <div class="step">
     <div class="step-num" style="background: var(--act-enforce);">7</div>
-    <h3>Prove It: Re-Run the Vulnerable Build</h3>
-    <p>Trigger the vulnerable pipeline again. This time, the ACS image check step should fail &mdash; the policy blocks the build before it can deploy.</p>
-    <div class="look-for">
-      <strong>What to show</strong>
-      Watch the pipeline run in OpenShift. It will fail at the <em>acs-image-check</em> step with policy violations. The vulnerable image never reaches the cluster.
-    </div>
+    <h3>The Full Supply Chain</h3>
+    <p>With VEX enforcement in the pipeline and cosign image signing on every build, the supply chain is locked down:</p>
+    <ol style="font-size: 0.9rem; color: #4a4a4a; line-height: 1.8; padding-left: 1.25rem;">
+      <li><strong>VEX check</strong> &mdash; blocks builds with unresolved CVEs</li>
+      <li><strong>Cosign signing</strong> &mdash; only pipeline-built images are trusted</li>
+      <li><strong>ACS signature policy</strong> &mdash; prevents unsigned images from deploying</li>
+      <li><strong>TPA SBOM tracking</strong> &mdash; full visibility into what shipped</li>
+    </ol>
     <div class="step-links">
-      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
+      <a href="${ACS_CONSOLE_URL}/main/policies" target="_blank">ACS &mdash; Policies</a>
+      <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
     </div>
-    <p class="note">Or from the terminal: <code>make pipeline-vulnerable</code></p>
-  </div>
-
-  <!-- ── BONUS ── -->
-
-  <div class="act-label bonus">Bonus</div>
-
-  <div class="step">
-    <div class="step-num" style="background: var(--act-bonus);">+</div>
-    <h3>Live Exploit: CVE-2022-40152</h3>
-    <p>Demonstrate real-world impact. A tiny XML payload (&lt;1 KB) crashes the vulnerable app via Woodstox DTD recursion. The Lightwell-patched version rejects it cleanly at a depth limit.</p>
-    <div class="pipeline-box">./scripts/exploit-demo.sh \
-  http://catalog-vulnerable.${DEMO_NAMESPACE}.svc:8080 \
-  http://catalog-remediated.${DEMO_NAMESPACE}.svc:8080</div>
-    <p class="note">Requires terminal access. The vulnerable app returns HTTP 500 (StackOverflowError); the remediated app rejects the payload safely.</p>
   </div>
 
 </div><!-- /timeline -->
@@ -324,9 +311,10 @@
     <ul>
       <li><strong>Drop-in replacement</strong> &mdash; no code changes, no version upgrades</li>
       <li><strong>Critical CVEs eliminated</strong> at the dependency level by Lightwell Network</li>
-      <li><strong>Full SBOM visibility</strong> tracked and analyzed in Trusted Profile Analyzer</li>
-      <li><strong>Policy enforcement</strong> prevents vulnerable images from deploying via ACS</li>
+      <li><strong>VEX data</strong> enables accurate vulnerability assessment, distinguishing patched from unpatched</li>
+      <li><strong>Pipeline enforcement</strong> blocks builds with unresolved vulnerabilities</li>
       <li><strong>Image signing</strong> with Sigstore/cosign for supply chain integrity</li>
+      <li><strong>Full SBOM visibility</strong> tracked and analyzed in Trusted Profile Analyzer</li>
       <li><strong>SLSA Level 3</strong> build provenance for all Lightwell artifacts</li>
     </ul>
   </div>

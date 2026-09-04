@@ -60,9 +60,9 @@ echo "  From Vulnerable to Verified"
 echo -e "${NC}"
 echo ""
 narrate "This demo walks through three acts:"
-echo "  1. The Problem  — Examine a vulnerable app and what security tools see"
-echo "  2. The Fix      — Rebuild with Lightwell Network and compare results"
-echo "  3. Lock the Door — Enable enforcement to block vulnerable builds"
+echo "  1. The Problem  — Build a vulnerable app, see the CVEs the pipeline finds"
+echo "  2. The Fix      — Rebuild with Lightwell Network + VEX, see CVEs suppressed"
+echo "  3. Lock the Door — Enable enforcement so vulnerable builds fail"
 echo ""
 [ -n "$HUB_URL" ] && echo -e "  Demo Hub:  ${GREEN}https://${HUB_URL}${NC}"
 [ -n "$TPA_URL_HOST" ] && echo -e "  TPA:       ${GREEN}https://${TPA_URL_HOST}${NC}"
@@ -94,8 +94,12 @@ tkn pipelinerun logs -f --last -n "$NAMESPACE" 2>/dev/null || \
   narrate "(Pipeline logs not available — check OpenShift console)"
 pause
 
-narrate "The build completed. The policies are in inform-only mode, so the app"
-narrate "deployed despite its vulnerabilities. Let's examine what was found."
+narrate "The build completed. Let's look at what the pipeline found."
+echo ""
+echo -e "  ${BOLD}Pipeline VEX Check Results${NC}"
+narrate "  The vex-check step scanned the SBOM for known vulnerabilities."
+narrate "  Since the vulnerable build uses unpatched Maven Central dependencies,"
+narrate "  VEX data doesn't apply — all CVEs remain in the findings."
 echo ""
 
 if [ -n "$TPA_URL_HOST" ]; then
@@ -109,7 +113,7 @@ if [ -n "$ACS_URL" ]; then
   echo -e "  ${BOLD}Advanced Cluster Security — Violations${NC}"
   echo -e "    ${GREEN}https://${ACS_URL}/main/violations${NC}"
   narrate "  > Filter by namespace '${NAMESPACE}'."
-  narrate "  > Note the policy violations — detected but not enforced."
+  narrate "  > Note the policy violations flagged by ACS (inform mode)."
   echo ""
 fi
 pause
@@ -127,6 +131,10 @@ echo "  org.json       20220320   ->  20220320.0.0.rhlw-00003"
 echo "  spring-core    5.3.18     ->  5.3.18.rhlw-00003"
 echo ""
 narrate "No code changes required. Just switch the Maven profile."
+narrate ""
+narrate "Lightwell also publishes VEX (Vulnerability Exploitability eXchange) data"
+narrate "for its remediated packages. VEX tells downstream tooling: 'this CVE has"
+narrate "been resolved in this build — the vulnerable code is not present.'"
 pause
 
 narrate "Triggering the remediated build pipeline..."
@@ -136,97 +144,60 @@ tkn pipelinerun logs -f --last -n "$NAMESPACE" 2>/dev/null || \
   narrate "(Pipeline logs not available — check OpenShift console)"
 pause
 
-narrate "Now let's compare the results side by side."
+narrate "Now let's compare the vex-check results."
 echo ""
+echo -e "  ${BOLD}Pipeline VEX Check — Before vs. After${NC}"
+narrate "  The same vex-check step ran, but this time Lightwell's VEX data"
+narrate "  was applied. The 8 CVEs covered by VEX are now suppressed —"
+narrate "  they're confirmed as patched in the .rhlw builds."
+echo ""
+narrate "  Check the pipeline run logs to see the summary:"
+narrate "    Total vulnerabilities → Suppressed by VEX → Remaining"
+echo ""
+
 if [ -n "$TPA_URL_HOST" ]; then
   echo -e "  ${BOLD}TPA — SBOM Browser${NC}"
   echo -e "    ${GREEN}https://${TPA_URL_HOST}/sboms${NC}"
   narrate "  > Find the remediated SBOM alongside the vulnerable one."
-  narrate "  > Compare CVE counts — critical should be zero."
+  narrate "  > The SBOM tracks which versions were used and their provenance."
   echo ""
 fi
-if [ -n "$ACS_URL" ]; then
-  echo -e "  ${BOLD}ACS — Violations${NC}"
-  echo -e "    ${GREEN}https://${ACS_URL}/main/violations${NC}"
-  narrate "  > Only the vulnerable deployment has violations."
-  echo ""
-  echo -e "  ${BOLD}ACS — Deployment Risk${NC}"
-  echo -e "    ${GREEN}https://${ACS_URL}/main/risk${NC}"
-  narrate "  > Compare risk scores between the two deployments."
-  echo ""
-fi
+pause
+
+narrate "Let's also prove the remediation works functionally."
+narrate "CVE-2022-40152 is an XML DTD recursion DoS. A tiny payload (<1 KB) crashes"
+narrate "the vulnerable app. The Lightwell-patched version rejects it safely."
+echo ""
+echo -e "  ${BOLD}Exploit Demo${NC}"
+echo "  ./scripts/exploit-demo.sh"
+echo ""
+narrate "  Run this from the terminal to see the vulnerable app crash (HTTP 500)"
+narrate "  while the remediated app handles the payload cleanly."
 pause
 
 # ─── ACT 3 ────────────────────────────────────────────────
 
 banner "ACT 3: LOCK THE DOOR"
 
-narrate "We've shown that Lightwell eliminates the CVEs. Now let's make sure"
-narrate "vulnerable images can't be deployed going forward."
+narrate "We've shown that Lightwell eliminates the CVEs and that VEX data"
+narrate "lets the pipeline distinguish real vulnerabilities from resolved ones."
+narrate ""
+narrate "Now let's enforce it: configure the pipeline so that builds with"
+narrate "unresolved high-severity vulnerabilities are blocked."
 echo ""
-narrate "Enabling build-time enforcement on ACS policies..."
-echo ""
-
-POLICY_NAMES=(
-  "Lightwell Demo — Block Critical CVEs (CVSS >= 9.0)"
-  "Lightwell Demo — Block Known CVEs"
-)
-
-for POLICY_NAME in "${POLICY_NAMES[@]}"; do
-  echo -n "  Enabling enforcement: ${POLICY_NAME} ... "
-  POLICY_ID=$(curl -sk "https://${ROX_CENTRAL_ENDPOINT}/v1/policies" \
-    -H "Authorization: Bearer ${ROX_API_TOKEN}" 2>/dev/null \
-    | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-for p in data.get('policies', []):
-    if p['name'] == '$POLICY_NAME':
-        print(p['id'])
-        break
-" 2>/dev/null) || true
-
-  if [ -z "$POLICY_ID" ]; then
-    echo -e "${YELLOW}not found — skipping${NC}"
-    continue
-  fi
-
-  POLICY_JSON=$(curl -sk "https://${ROX_CENTRAL_ENDPOINT}/v1/policies/${POLICY_ID}" \
-    -H "Authorization: Bearer ${ROX_API_TOKEN}" 2>/dev/null)
-
-  UPDATED=$(echo "$POLICY_JSON" | python3 -c "
-import sys, json
-p = json.load(sys.stdin)
-p['enforcementActions'] = ['FAIL_BUILD_ENFORCEMENT']
-p.pop('lastUpdated', None)
-p.pop('SORTLifecycleStage', None)
-p.pop('SORTEnforcement', None)
-json.dump(p, sys.stdout)
-" 2>/dev/null)
-
-  RESULT=$(curl -sk -X PUT "https://${ROX_CENTRAL_ENDPOINT}/v1/policies/${POLICY_ID}" \
-    -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "$UPDATED" -w "%{http_code}" -o /dev/null 2>/dev/null) || true
-
-  if [ "$RESULT" = "200" ]; then
-    echo -e "${GREEN}OK${NC}"
-  else
-    echo -e "${YELLOW}HTTP $RESULT${NC}"
-  fi
-done
-
-echo ""
-narrate "Enforcement is now active. Any build that fails these policies"
-narrate "will be blocked at the ACS image check step."
+narrate "We'll re-run the vulnerable build with VEX enforcement enabled."
+narrate "Since the vulnerable dependencies don't match any VEX statements,"
+narrate "the CVEs remain — and the pipeline will fail at the vex-check step."
 pause
 
-narrate "Let's prove it. Re-triggering the vulnerable build (with enforcement, no soft-fail)..."
+narrate "Triggering the vulnerable build with VEX enforcement (FAIL_ON=high)..."
 echo ""
 sed_pipelinerun "$PROJECT_DIR/tekton/pipelinerun-vulnerable.yaml" \
   | sed 's/value: "true"/value: "false"/' \
+  | awk '/name: SOFT_FAIL/{print; getline; print; print "    - name: VEX_FAIL_ON"; print "      value: \"high\""; next}1' \
   | oc create -n "$NAMESPACE" -f -
 echo ""
-narrate "Watch the pipeline — it should fail at acs-image-check."
+narrate "Watch the pipeline — it should fail at the vex-check step."
 echo ""
 if [ -n "$OCP_URL" ]; then
   echo -e "  ${BOLD}OpenShift — Pipeline Runs${NC}"
@@ -237,6 +208,19 @@ tkn pipelinerun logs -f --last -n "$NAMESPACE" 2>/dev/null || \
   narrate "(Pipeline logs not available — check OpenShift console)"
 pause
 
+narrate "The vulnerable build was blocked. High-severity CVEs remain"
+narrate "because VEX doesn't cover the unpatched Maven Central versions."
+echo ""
+narrate "Meanwhile, the remediated build would pass this same check —"
+narrate "Lightwell's VEX data suppresses those findings."
+echo ""
+narrate "Combined with cosign image signing (which runs on every build),"
+narrate "the pipeline now ensures:"
+echo "  1. Only builds with resolved vulnerabilities proceed (VEX check)"
+echo "  2. Only pipeline-built images are trusted (cosign signature)"
+echo "  3. ACS enforces signature verification at deploy time"
+pause
+
 # ─── WRAP-UP ──────────────────────────────────────────────
 
 banner "DEMO COMPLETE"
@@ -245,9 +229,10 @@ echo "  Key takeaways:"
 echo ""
 echo "    - Drop-in replacement — no code changes, no version upgrades"
 echo "    - Critical CVEs eliminated at the dependency level"
+echo "    - VEX data enables accurate vulnerability assessment"
+echo "    - Pipeline enforcement blocks builds with unresolved CVEs"
 echo "    - Container image signed with Sigstore/cosign"
 echo "    - Full SBOM tracked in Trusted Profile Analyzer"
-echo "    - ACS policies enforce compliance at build time"
 echo "    - SLSA Level 3 build provenance for Lightwell artifacts"
 echo ""
 narrate "The Red Hat Advanced Developer Suite:"

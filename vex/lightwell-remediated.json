@@ -1,0 +1,192 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "vendor",
+      "name": "Lightwell Network",
+      "namespace": "https://lightwell.example.com"
+    },
+    "title": "Lightwell Network — Remediated Dependencies VEX",
+    "tracking": {
+      "current_release_date": "2026-09-01T00:00:00Z",
+      "id": "LNVEX-2026-001",
+      "initial_release_date": "2026-09-01T00:00:00Z",
+      "revision_history": [
+        {
+          "date": "2026-09-01T00:00:00Z",
+          "number": "1",
+          "summary": "Initial release"
+        }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "Lightwell Network",
+        "branches": [
+          {
+            "category": "product_name",
+            "name": "Lightwell Remediated Dependencies",
+            "product": {
+              "name": "Lightwell Remediated Dependencies",
+              "product_id": "lightwell-remediated-deps"
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar",
+            "product": {
+              "name": "woodstox-core 6.0.3.rhlw-00001",
+              "product_id": "com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar",
+              "product_identification_helper": {
+                "purl": "pkg:maven/com.fasterxml.woodstox/woodstox-core@6.0.3.rhlw-00001?type=jar"
+              }
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar",
+            "product": {
+              "name": "json-path 2.7.0.rhlw-00001",
+              "product_id": "com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar",
+              "product_identification_helper": {
+                "purl": "pkg:maven/com.jayway.jsonpath/json-path@2.7.0.rhlw-00001?type=jar"
+              }
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "org.json.json-20220320.0.0.rhlw-00003.jar",
+            "product": {
+              "name": "org.json 20220320.0.0.rhlw-00003",
+              "product_id": "org.json.json-20220320.0.0.rhlw-00003.jar",
+              "product_identification_helper": {
+                "purl": "pkg:maven/org.json/json@20220320.0.0.rhlw-00003?type=jar"
+              }
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "org.springframework.spring-core-5.3.18.rhlw-00003.jar",
+            "product": {
+              "name": "spring-core 5.3.18.rhlw-00003",
+              "product_id": "org.springframework.spring-core-5.3.18.rhlw-00003.jar",
+              "product_identification_helper": {
+                "purl": "pkg:maven/org.springframework/spring-core@5.3.18.rhlw-00003?type=jar"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "category": "default_component_of",
+        "product_reference": "com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar",
+        "relates_to_product_reference": "lightwell-remediated-deps",
+        "full_product_name": {
+          "product_id": "lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar",
+          "name": "woodstox-core 6.0.3.rhlw-00001 as component of Lightwell Remediated Dependencies"
+        }
+      },
+      {
+        "category": "default_component_of",
+        "product_reference": "com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar",
+        "relates_to_product_reference": "lightwell-remediated-deps",
+        "full_product_name": {
+          "product_id": "lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar",
+          "name": "json-path 2.7.0.rhlw-00001 as component of Lightwell Remediated Dependencies"
+        }
+      },
+      {
+        "category": "default_component_of",
+        "product_reference": "org.json.json-20220320.0.0.rhlw-00003.jar",
+        "relates_to_product_reference": "lightwell-remediated-deps",
+        "full_product_name": {
+          "product_id": "lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar",
+          "name": "org.json 20220320.0.0.rhlw-00003 as component of Lightwell Remediated Dependencies"
+        }
+      },
+      {
+        "category": "default_component_of",
+        "product_reference": "org.springframework.spring-core-5.3.18.rhlw-00003.jar",
+        "relates_to_product_reference": "lightwell-remediated-deps",
+        "full_product_name": {
+          "product_id": "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar",
+          "name": "spring-core 5.3.18.rhlw-00003 as component of Lightwell Remediated Dependencies"
+        }
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2022-40152",
+      "notes": [{ "category": "description", "text": "Woodstox XML DTD recursion DoS — fixed in Lightwell build 6.0.3.rhlw-00001." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"] }]
+    },
+    {
+      "cve": "CVE-2022-40156",
+      "notes": [{ "category": "description", "text": "Woodstox XML processing vulnerability — fixed in Lightwell build 6.0.3.rhlw-00001." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"] }]
+    },
+    {
+      "cve": "CVE-2023-51074",
+      "notes": [{ "category": "description", "text": "JsonPath stack overflow — fixed in Lightwell build 2.7.0.rhlw-00001." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"] }]
+    },
+    {
+      "cve": "CVE-2023-1370",
+      "notes": [{ "category": "description", "text": "json-smart DoS — fixed in Lightwell build 2.7.0.rhlw-00001." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"] }]
+    },
+    {
+      "cve": "CVE-2022-45688",
+      "notes": [{ "category": "description", "text": "org.json vulnerability — fixed in Lightwell build 20220320.0.0.rhlw-00003." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"] }]
+    },
+    {
+      "cve": "CVE-2023-5072",
+      "notes": [{ "category": "description", "text": "org.json DoS — fixed in Lightwell build 20220320.0.0.rhlw-00003." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"] }]
+    },
+    {
+      "cve": "CVE-2022-22968",
+      "notes": [{ "category": "description", "text": "Spring Framework vulnerability — fixed in Lightwell build 5.3.18.rhlw-00003." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"] }]
+    },
+    {
+      "cve": "CVE-2023-20861",
+      "notes": [{ "category": "description", "text": "Spring Expression DoS — fixed in Lightwell build 5.3.18.rhlw-00003." }],
+      "product_status": {
+        "known_not_affected": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"]
+      },
+      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"] }]
+    }
+  ]
+}

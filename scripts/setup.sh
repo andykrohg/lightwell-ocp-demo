@@ -168,16 +168,45 @@ for policy in "$PROJECT_DIR"/acs-policies/*.json; do
   fi
 done
 
-banner "Step 6: Grant pipeline service account permissions"
+banner "Step 6: Upload Lightwell VEX data to TPA"
+
+echo -n "  Obtaining OIDC token... "
+TPA_TOKEN=$(curl -sf -X POST "${TPA_OIDC_ISSUER_URL}" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=${TPA_CLIENT_ID}" \
+  -d "client_secret=${TPA_CLIENT_SECRET}" \
+  -d "scope=openid" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])" 2>/dev/null) || true
+if [ -n "$TPA_TOKEN" ]; then
+  echo -e "${GREEN}OK${NC}"
+else
+  echo -e "${YELLOW}failed — VEX upload will be skipped${NC}"
+fi
+
+if [ -n "$TPA_TOKEN" ]; then
+  echo -n "  Uploading Lightwell VEX document... "
+  VEX_RESPONSE=$(curl -sk -X POST "${TPA_URL}/api/v3/advisory?format=csaf" \
+    -H "Authorization: Bearer $TPA_TOKEN" \
+    -H "Content-Type: application/json" \
+    --data-binary @"$PROJECT_DIR/vex/lightwell-remediated.json" \
+    -w "%{http_code}" -o /dev/null 2>/dev/null) || true
+  if [ "$VEX_RESPONSE" -ge 200 ] 2>/dev/null && [ "$VEX_RESPONSE" -lt 300 ] 2>/dev/null; then
+    echo -e "${GREEN}OK${NC}"
+  else
+    echo -e "${YELLOW}HTTP $VEX_RESPONSE${NC}"
+  fi
+fi
+
+banner "Step 7: Grant pipeline service account permissions"
 oc adm policy add-role-to-user edit system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
 oc adm policy add-scc-to-user privileged system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
 
-banner "Step 7: Deploy in-cluster container registry"
+banner "Step 8: Deploy in-cluster container registry"
 oc apply -f "$PROJECT_DIR/manifests/base/registry/"
 echo "  Waiting for registry to be ready..."
 oc rollout status deployment/registry -n "$DEMO_NAMESPACE" --timeout=60s
 
-banner "Step 8: Deploy catalog apps"
+banner "Step 9: Deploy catalog apps"
 kustomize build "$PROJECT_DIR/manifests/overlays/vulnerable" \
   | sed -e "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
   | oc apply -n "$DEMO_NAMESPACE" -f -
@@ -185,7 +214,7 @@ kustomize build "$PROJECT_DIR/manifests/overlays/remediated" \
   | sed -e "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
   | oc apply -n "$DEMO_NAMESPACE" -f -
 
-banner "Step 9: Deploy demo hub"
+banner "Step 10: Deploy demo hub"
 kustomize build "$PROJECT_DIR/manifests/overlays/dashboard" \
   | sed \
     -e "s|__TPA_CONSOLE_URL__|${TPA_CONSOLE_URL}|g" \

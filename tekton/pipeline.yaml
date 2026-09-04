@@ -55,6 +55,10 @@ spec:
       type: string
       default: "false"
       description: When true, ACS policy violations do not block the pipeline
+    - name: VEX_FAIL_ON
+      type: string
+      default: ""
+      description: Fail the VEX check if vulnerabilities at this severity or higher remain after VEX (critical, high, medium, low)
   workspaces:
     - name: shared-workspace
       description: Workspace shared across pipeline tasks
@@ -103,7 +107,24 @@ spec:
         - name: maven-settings
           workspace: maven-settings
 
-    # 3. Upload SBOM to TPA (before buildah to avoid SELinux conflict on shared PVC)
+    # 3. VEX-aware vulnerability check
+    - name: vex-check
+      runAfter:
+        - maven-build
+      taskRef:
+        name: vex-check
+      params:
+        - name: SBOM_PATH
+          value: catalog-app/target/bom.json
+        - name: VEX_PATH
+          value: vex/lightwell-remediated.openvex.json
+        - name: FAIL_ON
+          value: $(params.VEX_FAIL_ON)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    # 4. Upload SBOM to TPA (before buildah to avoid SELinux conflict on shared PVC)
     - name: upload-sbom
       runAfter:
         - maven-build
@@ -128,10 +149,11 @@ spec:
         - name: source
           workspace: shared-workspace
 
-    # 4. Build container image (after SBOM upload)
+    # 5. Build container image (after SBOM upload and VEX check)
     - name: buildah
       runAfter:
         - upload-sbom
+        - vex-check
       taskRef:
         name: buildah
       params:
@@ -147,7 +169,7 @@ spec:
         - name: source
           workspace: shared-workspace
 
-    # 5. Sign container image
+    # 6. Sign container image
     - name: cosign-sign
       runAfter:
         - buildah
@@ -157,7 +179,7 @@ spec:
         - name: IMAGE
           value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
 
-    # 6. ACS policy check
+    # 7. ACS policy check
     - name: acs-image-check
       runAfter:
         - buildah
@@ -173,7 +195,7 @@ spec:
         - name: SOFT_FAIL
           value: $(params.SOFT_FAIL)
 
-    # 7. ACS vulnerability scan
+    # 8. ACS vulnerability scan
     - name: acs-image-scan
       runAfter:
         - buildah
@@ -187,7 +209,7 @@ spec:
         - name: IMAGE
           value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
 
-    # 8. Deploy to OpenShift
+    # 9. Deploy to OpenShift
     - name: deploy
       runAfter:
         - cosign-sign

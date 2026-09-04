@@ -1,0 +1,65 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://lightwell.example.com/vex/LNVEX-2026-001",
+  "author": "Lightwell Network",
+  "timestamp": "2026-09-01T00:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": { "@id": "https://www.cve.org/CVERecord?id=CVE-2022-40152" },
+      "products": [{ "@id": "pkg:maven/com.fasterxml.woodstox/woodstox-core@6.0.3.rhlw-00001" }],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "statement": "Patch backported in Lightwell build 6.0.3.rhlw-00001."
+    },
+    {
+      "vulnerability": { "@id": "https://www.cve.org/CVERecord?id=CVE-2022-40156" },
+      "products": [{ "@id": "pkg:maven/com.fasterxml.woodstox/woodstox-core@6.0.3.rhlw-00001" }],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "statement": "Patch backported in Lightwell build 6.0.3.rhlw-00001."
+    },
+    {
+      "vulnerability": { "@id": "https://www.cve.org/CVERecord?id=CVE-2023-51074" },
+      "products": [{ "@id": "pkg:maven/com.jayway.jsonpath/json-path@2.7.0.rhlw-00001" }],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "statement": "Patch backported in Lightwell build 2.7.0.rhlw-00001."
+    },
+    {
+      "vulnerability": { "@id": "https://www.cve.org/CVERecord?id=CVE-2023-1370" },
+      "products": [{ "@id": "pkg:maven/com.jayway.jsonpath/json-path@2.7.0.rhlw-00001" }],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "statement": "Patch backported in Lightwell build 2.7.0.rhlw-00001."
+    },
+    {
+      "vulnerability": { "@id": "https://www.cve.org/CVERecord?id=CVE-2022-45688" },
+      "products": [{ "@id": "pkg:maven/org.json/json@20220320.0.0.rhlw-00003" }],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "statement": "Patch backported in Lightwell build 20220320.0.0.rhlw-00003."
+    },
+    {
+      "vulnerability": { "@id": "https://www.cve.org/CVERecord?id=CVE-2023-5072" },
+      "products": [{ "@id": "pkg:maven/org.json/json@20220320.0.0.rhlw-00003" }],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "statement": "Patch backported in Lightwell build 20220320.0.0.rhlw-00003."
+    },
+    {
+      "vulnerability": { "@id": "https://www.cve.org/CVERecord?id=CVE-2022-22968" },
+      "products": [{ "@id": "pkg:maven/org.springframework/spring-core@5.3.18.rhlw-00003" }],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "statement": "Patch backported in Lightwell build 5.3.18.rhlw-00003."
+    },
+    {
+      "vulnerability": { "@id": "https://www.cve.org/CVERecord?id=CVE-2023-20861" },
+      "products": [{ "@id": "pkg:maven/org.springframework/spring-core@5.3.18.rhlw-00003" }],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "statement": "Patch backported in Lightwell build 5.3.18.rhlw-00003."
+    }
+  ]
+}
