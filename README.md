@@ -42,9 +42,9 @@ SBOM tracking, and image signing to demonstrate a complete secure supply chain.
 
 | Act | What Happens |
 |-----|-------------|
-| **1 — The Problem** | Build with standard Maven Central deps → pipeline VEX check shows all CVEs unresolved; TPA tracks the SBOM; ACS flags violations |
-| **2 — The Fix** | Rebuild with Lightwell Network `.rhlw` deps + VEX data → VEX check suppresses 8 patched CVEs; exploit demo proves functional fix |
-| **3 — Lock the Door** | Enable VEX enforcement (`REQUIRE_VEX=true`) → vulnerable build blocked (zero VEX suppressions); remediated build passes |
+| **1 — The Problem** | Build with standard Maven Central deps → pipeline vex-check shows all CVEs unresolved; TPA tracks the SBOM; ACS flags violations |
+| **2 — The Fix** | Rebuild with Lightwell Network `.rhlw` deps + VEX data → pipeline vex-check suppresses patched CVEs; exploit demo proves functional fix |
+| **3 — Lock the Door** | Enable VEX enforcement (`REQUIRE_VEX=true`) → vulnerable build fails at vex-check (zero VEX suppressions); remediated build passes |
 
 ## Prerequisites
 
@@ -167,25 +167,31 @@ repository.
 **VEX Check** — The pipeline includes a VEX-aware vulnerability scan step that
 evaluates the SBOM against known CVE databases, then applies Lightwell's VEX
 data to suppress findings for patched dependencies. For the vulnerable build,
-all CVEs remain. For the remediated build, the 8 Lightwell-covered CVEs are
+all CVEs remain. For the remediated build, the Lightwell-covered CVEs are
 suppressed. The `REQUIRE_VEX` pipeline parameter enables enforcement — when set
 to `true`, builds where VEX suppresses zero vulnerabilities are blocked,
-ensuring only builds with verified remediation data can proceed.
+ensuring only builds with verified remediation data can proceed. This is the
+pipeline step that correctly differentiates the two builds in Act 3.
 
 **Trusted Profile Analyzer** — The pipeline uploads a CycloneDX SBOM (generated
 by the `cyclonedx-maven-plugin`) to TPA after each build. Lightwell's CSAF VEX
 document is uploaded during setup. TPA provides SBOM tracking and advisory
-visibility across both build variants.
+visibility. Note: TPA does not apply VEX data to its own CVE analysis, so both
+SBOMs show the same CVE counts — the VEX suppression difference is only visible
+in the pipeline vex-check logs.
 
 **Advanced Cluster Security** — CVE watch policies (inform-only) flag known
 vulnerabilities across deployments. A signature verification policy ensures only
 cosign-signed images from the trusted pipeline can deploy. ACS provides runtime
-monitoring and risk scoring for both deployment variants.
+monitoring and risk scoring for both deployment variants. Note: ACS CVE policies
+cannot distinguish the two builds (both flag the same vulnerabilities), so
+enforcement in the demo is handled by the pipeline vex-check, not ACS.
 
 ## Notes
 
-- The vulnerable pipeline uses `--soft-fail` on ACS checks so it deploys despite
-  violations — this lets you show both variants side by side.
+- Both pipelines use `--soft-fail` on ACS checks so they deploy despite
+  violations — ACS CVE policies flag both builds equally, so soft-fail lets
+  you show both variants side by side.
 - The `cosign-sign` task requires Red Hat Trusted Artifact Signer (RHTAS). If
   not configured, signing will fail but won't block the rest of the demo.
 - The demo hub page auto-templates console URLs at container startup via

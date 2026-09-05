@@ -247,14 +247,13 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-solution);">4</div>
     <h3>Compare VEX Check Results</h3>
-    <p>The remediated build runs the same pipeline. This time, Lightwell's VEX data is applied during the vex-check step. The 6 CVEs covered by VEX are <strong>suppressed</strong> &mdash; they're confirmed as patched in the <code>.rhlw</code> builds.</p>
+    <p>The remediated build runs the same pipeline. This time, Lightwell's VEX data is applied during the <strong>pipeline vex-check step</strong>. The CVEs covered by VEX are <strong>suppressed</strong> &mdash; they're confirmed as patched in the <code>.rhlw</code> builds.</p>
     <div class="look-for">
       <strong>What to show</strong>
-      In the pipeline run logs, find the <em>vex-check</em> step. Compare the summary line: <em>Total vulnerabilities &rarr; Suppressed by VEX &rarr; Remaining</em>. The 8 Lightwell-covered CVEs should be suppressed, leaving only unrelated findings.
+      In the pipeline run logs, find the <em>vex-check</em> step. Compare the summary line: <em>Total vulnerabilities &rarr; Suppressed by VEX &rarr; Remaining</em>. The Lightwell-covered CVEs are suppressed, leaving only unrelated findings. Note: TPA tracks the SBOM for provenance but doesn't apply VEX to its own CVE view &mdash; the suppression is only visible in the pipeline logs.
     </div>
     <div class="step-links">
       <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
-      <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
     </div>
   </div>
 
@@ -292,10 +291,10 @@
     <h3>The Full Supply Chain</h3>
     <p>With VEX enforcement in the pipeline and cosign image signing on every build, the supply chain is locked down:</p>
     <ol style="font-size: 0.9rem; color: #4a4a4a; line-height: 1.8; padding-left: 1.25rem;">
-      <li><strong>VEX check</strong> &mdash; blocks builds with unresolved CVEs</li>
+      <li><strong>Pipeline vex-check</strong> &mdash; blocks builds without verified remediation data</li>
       <li><strong>Cosign signing</strong> &mdash; only pipeline-built images are trusted</li>
-      <li><strong>ACS signature policy</strong> &mdash; prevents unsigned images from deploying</li>
-      <li><strong>TPA SBOM tracking</strong> &mdash; full visibility into what shipped</li>
+      <li><strong>ACS</strong> &mdash; monitors CVEs across deployments and enforces image signature verification</li>
+      <li><strong>TPA</strong> &mdash; tracks every SBOM and advisory for full supply chain visibility</li>
     </ol>
     <div class="step-links">
       <a href="${ACS_CONSOLE_URL}/main/policies" target="_blank">ACS &mdash; Policies</a>

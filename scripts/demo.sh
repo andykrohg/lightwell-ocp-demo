@@ -159,7 +159,9 @@ if [ -n "$TPA_URL_HOST" ]; then
   echo -e "  ${BOLD}TPA — SBOM Browser${NC}"
   echo -e "    ${GREEN}https://${TPA_URL_HOST}/sboms${NC}"
   narrate "  > Find the remediated SBOM alongside the vulnerable one."
-  narrate "  > The SBOM tracks which versions were used and their provenance."
+  narrate "  > Note the .rhlw version numbers in the component list."
+  narrate "  > TPA tracks the SBOM for provenance — the VEX suppression"
+  narrate "  > is visible in the pipeline vex-check logs, not the SBOM view."
   echo ""
 fi
 pause
@@ -193,7 +195,6 @@ pause
 narrate "Triggering the vulnerable build with VEX enforcement (REQUIRE_VEX=true)..."
 echo ""
 sed_pipelinerun "$PROJECT_DIR/tekton/pipelinerun-vulnerable.yaml" \
-  | sed 's/value: "true"/value: "false"/' \
   | awk '/name: SOFT_FAIL/{print; getline; print; print "    - name: REQUIRE_VEX"; print "      value: \"true\""; next}1' \
   | oc create -n "$NAMESPACE" -f -
 echo ""
@@ -216,10 +217,11 @@ narrate "Lightwell's VEX data suppresses 6 known CVEs, proving the"
 narrate "dependencies include verified remediation."
 echo ""
 narrate "Combined with cosign image signing (which runs on every build),"
-narrate "the pipeline now ensures:"
-echo "  1. Only builds with resolved vulnerabilities proceed (VEX check)"
+narrate "the supply chain is locked down:"
+echo "  1. Only builds with verified remediation proceed (pipeline vex-check)"
 echo "  2. Only pipeline-built images are trusted (cosign signature)"
-echo "  3. ACS enforces signature verification at deploy time"
+echo "  3. ACS monitors CVEs and enforces signature verification at deploy time"
+echo "  4. TPA tracks every SBOM and advisory for full visibility"
 pause
 
 # ─── WRAP-UP ──────────────────────────────────────────────

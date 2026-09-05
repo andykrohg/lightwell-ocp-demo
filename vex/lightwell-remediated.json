@@ -1,13 +1,24 @@
 {
   "document": {
+    "aggregate_severity": {
+      "namespace": "https://access.redhat.com/security/updates/classification/",
+      "text": "Important"
+    },
     "category": "csaf_vex",
     "csaf_version": "2.0",
+    "distribution": {
+      "tlp": {
+        "label": "WHITE",
+        "url": "https://www.first.org/tlp/"
+      }
+    },
+    "lang": "en",
     "publisher": {
       "category": "vendor",
       "name": "Lightwell Network",
       "namespace": "https://lightwell.example.com"
     },
-    "title": "Lightwell Network — Remediated Dependencies VEX",
+    "title": "Lightwell Network \u2014 Remediated Dependencies VEX",
     "tracking": {
       "current_release_date": "2026-09-01T00:00:00Z",
       "id": "LNVEX-2026-001",
@@ -126,83 +137,613 @@
   "vulnerabilities": [
     {
       "cve": "CVE-2022-40152",
-      "notes": [{ "category": "description", "text": "Woodstox XML DTD recursion DoS — fixed in Lightwell build 6.0.3.rhlw-00001." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"]
+      "cwe": {
+        "id": "CWE-787",
+        "name": "Out-of-bounds Write"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"] }]
+      "discovery_date": "2022-09-16T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "woodstox-core: Woodstox XML DTD recursion denial of service (Fixed in woodstox-core 6.0.3.rhlw-00001)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "Woodstox before 6.4.0 allows DTD recursion causing stack overflow. Patch backported in Lightwell build 6.0.3.rhlw-00001."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"
+        ]
+      },
+      "release_date": "2022-09-16T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Important"
+        }
+      ],
+      "title": "woodstox-core: Woodstox XML DTD recursion denial of service (Fixed in woodstox-core 6.0.3.rhlw-00001)"
     },
     {
       "cve": "CVE-2022-40156",
-      "notes": [{ "category": "description", "text": "Woodstox XML processing vulnerability — fixed in Lightwell build 6.0.3.rhlw-00001." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"]
+      "cwe": {
+        "id": "CWE-787",
+        "name": "Out-of-bounds Write"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"] }]
+      "discovery_date": "2022-09-16T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "woodstox-core: Woodstox XML resource exhaustion vulnerability (Fixed in woodstox-core 6.0.3.rhlw-00001)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "Woodstox XML resource exhaustion vulnerability. Patch backported in Lightwell build 6.0.3.rhlw-00001."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"
+        ]
+      },
+      "release_date": "2022-09-16T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:com.fasterxml.woodstox.woodstox-core-6.0.3.rhlw-00001.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Important"
+        }
+      ],
+      "title": "woodstox-core: Woodstox XML resource exhaustion vulnerability (Fixed in woodstox-core 6.0.3.rhlw-00001)"
     },
     {
       "cve": "CVE-2023-51074",
-      "notes": [{ "category": "description", "text": "JsonPath stack overflow — fixed in Lightwell build 2.7.0.rhlw-00001." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"]
+      "cwe": {
+        "id": "CWE-674",
+        "name": "Uncontrolled Recursion"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"] }]
+      "discovery_date": "2023-12-27T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "json-path: JsonPath stack overflow via crafted input (Fixed in json-path 2.7.0.rhlw-00001)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "JsonPath recursive descent causing stack overflow. Patch backported in Lightwell build 2.7.0.rhlw-00001."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"
+        ]
+      },
+      "release_date": "2023-12-27T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Important"
+        }
+      ],
+      "title": "json-path: JsonPath stack overflow via crafted input (Fixed in json-path 2.7.0.rhlw-00001)"
     },
     {
       "cve": "CVE-2023-1370",
-      "notes": [{ "category": "description", "text": "json-smart DoS — fixed in Lightwell build 2.7.0.rhlw-00001." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"]
+      "cwe": {
+        "id": "CWE-674",
+        "name": "Uncontrolled Recursion"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"] }]
+      "discovery_date": "2023-03-22T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "json-smart: json-smart denial of service via deep nesting (Fixed in json-path 2.7.0.rhlw-00001)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "json-smart stack exhaustion via deeply nested JSON. Patch backported in Lightwell build 2.7.0.rhlw-00001."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"
+        ]
+      },
+      "release_date": "2023-03-22T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:com.jayway.jsonpath.json-path-2.7.0.rhlw-00001.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Important"
+        }
+      ],
+      "title": "json-smart: json-smart denial of service via deep nesting (Fixed in json-path 2.7.0.rhlw-00001)"
     },
     {
       "cve": "CVE-2022-45688",
-      "notes": [{ "category": "description", "text": "org.json vulnerability — fixed in Lightwell build 20220320.0.0.rhlw-00003." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"]
+      "cwe": {
+        "id": "CWE-674",
+        "name": "Uncontrolled Recursion"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"] }]
+      "discovery_date": "2022-12-13T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "org.json: Stack overflow via crafted XML-to-JSON conversion (Fixed in org.json 20220320.0.0.rhlw-00003)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "org.json XML-to-JSON conversion recursion causing stack overflow. Patch backported in Lightwell build 20220320.0.0.rhlw-00003."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"
+        ]
+      },
+      "release_date": "2022-12-13T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Important"
+        }
+      ],
+      "title": "org.json: Stack overflow via crafted XML-to-JSON conversion (Fixed in org.json 20220320.0.0.rhlw-00003)"
     },
     {
       "cve": "CVE-2023-5072",
-      "notes": [{ "category": "description", "text": "org.json DoS — fixed in Lightwell build 20220320.0.0.rhlw-00003." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"]
+      "cwe": {
+        "id": "CWE-770",
+        "name": "Allocation of Resources Without Limits or Throttling"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"] }]
+      "discovery_date": "2023-10-12T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "org.json: Denial of service via large JSON input (Fixed in org.json 20220320.0.0.rhlw-00003)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "org.json unbounded memory allocation via crafted JSON. Patch backported in Lightwell build 20220320.0.0.rhlw-00003."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"
+        ]
+      },
+      "release_date": "2023-10-12T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:org.json.json-20220320.0.0.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Important"
+        }
+      ],
+      "title": "org.json: Denial of service via large JSON input (Fixed in org.json 20220320.0.0.rhlw-00003)"
     },
     {
       "cve": "CVE-2022-22968",
-      "notes": [{ "category": "description", "text": "Spring Framework vulnerability — fixed in Lightwell build 5.3.18.rhlw-00003." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"]
+      "cwe": {
+        "id": "CWE-178",
+        "name": "Improper Handling of Case Sensitivity"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"] }]
+      "discovery_date": "2022-04-13T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "spring-core: Spring Framework data binding rules bypass (Fixed in spring-core 5.3.18.rhlw-00003)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "Spring Framework disallowedFields pattern bypass. Patch backported in Lightwell build 5.3.18.rhlw-00003."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+        ]
+      },
+      "release_date": "2022-04-13T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "NONE",
+            "baseScore": 5.3,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "LOW",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Moderate"
+        }
+      ],
+      "title": "spring-core: Spring Framework data binding rules bypass (Fixed in spring-core 5.3.18.rhlw-00003)"
     },
     {
       "cve": "CVE-2023-20861",
-      "notes": [{ "category": "description", "text": "Spring Expression DoS — fixed in Lightwell build 5.3.18.rhlw-00003." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"]
+      "cwe": {
+        "id": "CWE-770",
+        "name": "Allocation of Resources Without Limits or Throttling"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"] }]
+      "discovery_date": "2023-03-20T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "spring-expression: Spring Expression Language denial of service (Fixed in spring-core 5.3.18.rhlw-00003)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "Spring Expression Language DoS via crafted expression. Patch backported in Lightwell build 5.3.18.rhlw-00003."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+        ]
+      },
+      "release_date": "2023-03-20T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "LOW",
+            "baseScore": 5.3,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Moderate"
+        }
+      ],
+      "title": "spring-expression: Spring Expression Language denial of service (Fixed in spring-core 5.3.18.rhlw-00003)"
     },
     {
       "cve": "CVE-2025-41249",
-      "notes": [{ "category": "description", "text": "Spring Framework vulnerability — fixed in Lightwell build 5.3.18.rhlw-00003." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"]
+      "cwe": {
+        "id": "CWE-20",
+        "name": "Improper Input Validation"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"] }]
+      "discovery_date": "2025-06-15T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "spring-core: Spring Framework improper input validation (Fixed in spring-core 5.3.18.rhlw-00003)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "Spring Framework input validation vulnerability. Patch backported in Lightwell build 5.3.18.rhlw-00003."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+        ]
+      },
+      "release_date": "2025-06-15T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 8.2,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "LOW",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Important"
+        }
+      ],
+      "title": "spring-core: Spring Framework improper input validation (Fixed in spring-core 5.3.18.rhlw-00003)"
     },
     {
       "cve": "CVE-2026-41848",
-      "notes": [{ "category": "description", "text": "Spring Framework vulnerability — fixed in Lightwell build 5.3.18.rhlw-00003." }],
-      "product_status": {
-        "known_not_affected": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"]
+      "cwe": {
+        "id": "CWE-20",
+        "name": "Improper Input Validation"
       },
-      "threats": [{ "category": "impact", "details": "Vulnerable code not present — patch backported by Lightwell Network.", "product_ids": ["lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"] }]
+      "discovery_date": "2026-05-10T00:00:00+00:00",
+      "flags": [
+        {
+          "label": "vulnerable_code_not_present",
+          "product_ids": [
+            "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "summary",
+          "text": "spring-core: Spring Framework vulnerability (Fixed in spring-core 5.3.18.rhlw-00003)",
+          "title": "Vulnerability summary"
+        },
+        {
+          "category": "description",
+          "text": "Spring Framework vulnerability. Patch backported in Lightwell build 5.3.18.rhlw-00003."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+        ]
+      },
+      "release_date": "2026-05-10T00:00:00+00:00",
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "LOW",
+            "baseScore": 3.7,
+            "baseSeverity": "LOW",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L",
+            "version": "3.1"
+          },
+          "products": [
+            "lightwell-remediated-deps:org.springframework.spring-core-5.3.18.rhlw-00003.jar"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Low"
+        }
+      ],
+      "title": "spring-core: Spring Framework vulnerability (Fixed in spring-core 5.3.18.rhlw-00003)"
     }
   ]
 }
