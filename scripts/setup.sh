@@ -65,13 +65,6 @@ if [ -n "$LIGHTWELL_USERNAME" ] && [ -n "$LIGHTWELL_PASSWORD" ]; then
       <password>${LIGHTWELL_PASSWORD}</password>
     </server>
   </servers>
-  <mirrors>
-    <mirror>
-      <id>lightwell</id>
-      <mirrorOf>*</mirrorOf>
-      <url>https://packages.redhat.com/lightwell/java/remediated/</url>
-    </mirror>
-  </mirrors>
 </settings>
 XMLEOF
 )
