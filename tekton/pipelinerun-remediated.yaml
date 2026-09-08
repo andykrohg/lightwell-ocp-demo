@@ -45,4 +45,5 @@ spec:
             requests:
               storage: 5Gi
     - name: maven-settings
-      emptyDir: {}
+      secret:
+        secretName: lightwell-maven-settings

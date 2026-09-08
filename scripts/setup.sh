@@ -36,6 +36,7 @@ echo "  TPA_URL               = ${TPA_URL}"
 echo "  ROX_CENTRAL_ENDPOINT  = ${ROX_CENTRAL_ENDPOINT}"
 echo "  ACS_CONSOLE_URL       = ${ACS_CONSOLE_URL}"
 echo "  OCP_CONSOLE_URL       = ${OCP_CONSOLE_URL}"
+echo "  LIGHTWELL_USERNAME    = ${LIGHTWELL_USERNAME:-(not set)}"
 echo ""
 
 banner "Step 1: Create OpenShift project"
@@ -53,6 +54,34 @@ oc create secret generic tpa-credentials \
   --from-literal=client-secret="${TPA_CLIENT_SECRET}" \
   --from-literal=oidc-issuer="${TPA_OIDC_ISSUER}" \
   --dry-run=client -o yaml | oc apply -f -
+
+if [ -n "$LIGHTWELL_USERNAME" ] && [ -n "$LIGHTWELL_PASSWORD" ]; then
+  SETTINGS_XML=$(cat <<XMLEOF
+<settings>
+  <servers>
+    <server>
+      <id>lightwell</id>
+      <username>${LIGHTWELL_USERNAME}</username>
+      <password>${LIGHTWELL_PASSWORD}</password>
+    </server>
+  </servers>
+  <mirrors>
+    <mirror>
+      <id>lightwell</id>
+      <mirrorOf>*</mirrorOf>
+      <url>https://packages.redhat.com/lightwell/java/remediated/</url>
+    </mirror>
+  </mirrors>
+</settings>
+XMLEOF
+)
+  oc create secret generic lightwell-maven-settings \
+    --from-literal=settings.xml="$SETTINGS_XML" \
+    --dry-run=client -o yaml | oc apply -f -
+  echo -e "  Lightwell Maven settings ${GREEN}configured${NC}"
+else
+  echo -e "  Lightwell credentials ${YELLOW}not set${NC} — remediated builds will use public access only"
+fi
 
 if ! oc get secret cosign-signing-key -n "$DEMO_NAMESPACE" &>/dev/null; then
   echo "  Generating cosign key pair..."

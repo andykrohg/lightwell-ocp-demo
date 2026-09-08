@@ -149,7 +149,34 @@ spec:
         - name: source
           workspace: shared-workspace
 
-    # 5. Build container image (after SBOM upload and VEX check)
+    # 5. VEX reconciliation — create ACS false positive exceptions for VEX-resolved CVEs
+    - name: vex-reconcile
+      runAfter:
+        - upload-sbom
+      taskRef:
+        name: vex-reconcile
+      params:
+        - name: TPA_URL
+          value: $(params.TPA_URL)
+        - name: OIDC_ISSUER_URL
+          value: $(params.TPA_OIDC_ISSUER_URL)
+        - name: TPA_CLIENT_ID
+          value: $(params.TPA_CLIENT_ID)
+        - name: TPA_CLIENT_SECRET
+          value: $(params.TPA_CLIENT_SECRET)
+        - name: ROX_CENTRAL_ENDPOINT
+          value: $(params.ROX_CENTRAL_ENDPOINT)
+        - name: ROX_API_TOKEN
+          value: $(params.ROX_API_TOKEN)
+        - name: IMAGE
+          value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
+        - name: SBOM_PATH
+          value: catalog-app/target/bom.json
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+
+    # 6. Build container image
     - name: buildah
       runAfter:
         - upload-sbom
@@ -169,7 +196,7 @@ spec:
         - name: source
           workspace: shared-workspace
 
-    # 6. Sign container image
+    # 7. Sign container image
     - name: cosign-sign
       runAfter:
         - buildah
@@ -179,10 +206,11 @@ spec:
         - name: IMAGE
           value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
 
-    # 7. ACS policy check
+    # 8. ACS policy check
     - name: acs-image-check
       runAfter:
         - buildah
+        - vex-reconcile
       taskRef:
         name: acs-image-check
       params:
@@ -195,10 +223,11 @@ spec:
         - name: SOFT_FAIL
           value: $(params.SOFT_FAIL)
 
-    # 8. ACS vulnerability scan
+    # 9. ACS vulnerability scan
     - name: acs-image-scan
       runAfter:
         - buildah
+        - vex-reconcile
       taskRef:
         name: acs-image-scan
       params:
@@ -209,7 +238,7 @@ spec:
         - name: IMAGE
           value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
 
-    # 9. Deploy to OpenShift
+    # 10. Deploy to OpenShift
     - name: deploy
       runAfter:
         - cosign-sign

@@ -1,0 +1,195 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: vex-reconcile
+  labels:
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  description: >
+    Queries Trusted Profile Analyzer for VEX resolutions that apply to the
+    packages in an SBOM, then automatically marks matching CVEs as false
+    positives in ACS — scoped to the pipeline's image. Bridges the gap
+    between vendor-published VEX data and ACS vulnerability management.
+  params:
+    - name: TPA_URL
+      type: string
+      description: Base URL of the TPA/Trustify instance
+    - name: OIDC_ISSUER_URL
+      type: string
+      description: OIDC token endpoint URL for TPA authentication
+    - name: TPA_CLIENT_ID
+      type: string
+      default: walker
+      description: OIDC client ID for TPA
+    - name: TPA_CLIENT_SECRET
+      type: string
+      description: OIDC client secret for TPA
+    - name: ROX_CENTRAL_ENDPOINT
+      type: string
+      description: ACS Central endpoint (host:port)
+    - name: ROX_API_TOKEN
+      type: string
+      description: ACS API token for authentication
+    - name: IMAGE
+      type: string
+      description: Full image reference the exceptions should be scoped to
+    - name: SBOM_PATH
+      type: string
+      default: target/bom.json
+      description: Path to the CycloneDX SBOM relative to workspace root
+  workspaces:
+    - name: source
+      description: Workspace containing the SBOM
+  results:
+    - name: RESOLVED_CVES
+      description: Number of CVEs marked as false positive in ACS
+    - name: STATUS
+      description: Overall task status (success or failure)
+  steps:
+    - name: reconcile
+      image: registry.access.redhat.com/ubi9/ubi:latest
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        SBOM_FILE="$(workspaces.source.path)/$(params.SBOM_PATH)"
+        if [ ! -f "$SBOM_FILE" ]; then
+          echo "ERROR: SBOM not found at $SBOM_FILE"
+          printf "failure" > "$(results.STATUS.path)"
+          exit 1
+        fi
+
+        # --- Extract PURLs from CycloneDX SBOM ---
+        echo "=== Extracting PURLs from SBOM ==="
+        PURLS=$(python3 -c "
+        import json, sys
+        with open('$SBOM_FILE') as f:
+            bom = json.load(f)
+        purls = [c['purl'] for c in bom.get('components', []) if 'purl' in c]
+        print(json.dumps(purls))
+        ")
+        PURL_COUNT=$(echo "$PURLS" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+        echo "Found $PURL_COUNT PURLs"
+
+        if [ "$PURL_COUNT" -eq 0 ]; then
+          echo "No PURLs found in SBOM — nothing to reconcile."
+          printf "0" > "$(results.RESOLVED_CVES.path)"
+          printf "success" > "$(results.STATUS.path)"
+          exit 0
+        fi
+
+        # --- Obtain TPA token ---
+        echo ""
+        echo "=== Authenticating with TPA ==="
+        TOKEN=$(curl -sf -X POST "$(params.OIDC_ISSUER_URL)" \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          -d "grant_type=client_credentials" \
+          -d "client_id=$(params.TPA_CLIENT_ID)" \
+          -d "client_secret=$(params.TPA_CLIENT_SECRET)" \
+          -d "scope=openid" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+
+        if [ -z "$TOKEN" ]; then
+          echo "ERROR: Failed to obtain TPA token"
+          printf "failure" > "$(results.STATUS.path)"
+          exit 1
+        fi
+
+        # --- Query Trustify for VEX reconciliation ---
+        echo ""
+        echo "=== Querying TPA for VEX resolutions ==="
+        ANALYZE_BODY=$(python3 -c "
+        import json
+        purls = $PURLS
+        print(json.dumps({'purls': purls, 'include_resolved': True}))
+        ")
+
+        ANALYZE_RESULT=$(curl -sf -X POST "$(params.TPA_URL)/api/v3/vulnerability/analyze" \
+          -H "Authorization: Bearer $TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "$ANALYZE_BODY")
+
+        # --- Find CVEs with both affected AND resolving statuses for the same PURL ---
+        RESOLVED_CVES=$(echo "$ANALYZE_RESULT" | python3 -c "
+        import json, sys
+
+        data = json.load(sys.stdin)
+
+        resolved = {}
+        for purl, result in data.items():
+            affected_cves = set()
+            resolved_cves = {}
+            for detail in result.get('details', []):
+                for ps in detail.get('purl_statuses', []):
+                    status = ps.get('purl_status', {})
+                    vuln = status.get('vulnerability', {})
+                    cve = vuln.get('identifier', '')
+                    s = status.get('status', '')
+                    if s == 'affected':
+                        affected_cves.add(cve)
+                    elif s in ('not_affected', 'known_not_affected', 'fixed'):
+                        resolved_cves[cve] = s
+            for cve, vex_status in resolved_cves.items():
+                if cve in affected_cves and cve not in resolved:
+                    resolved[cve] = vex_status
+
+        for cve, status in sorted(resolved.items()):
+            print(f'{cve}\t{status}')
+        ")
+
+        if [ -z "$RESOLVED_CVES" ]; then
+          echo "No VEX resolutions found for affected CVEs."
+          printf "0" > "$(results.RESOLVED_CVES.path)"
+          printf "success" > "$(results.STATUS.path)"
+          exit 0
+        fi
+
+        RESOLVED_COUNT=$(echo "$RESOLVED_CVES" | wc -l | tr -d ' ')
+        echo "Found $RESOLVED_COUNT CVEs with VEX resolutions"
+        echo ""
+
+        # --- Parse image reference for ACS scope ---
+        IMAGE="$(params.IMAGE)"
+        REGISTRY=$(echo "$IMAGE" | cut -d/ -f1)
+        REMOTE=$(echo "$IMAGE" | cut -d/ -f2- | sed 's/:.*$//')
+        TAG=$(echo "$IMAGE" | grep -o ':.*$' | tr -d ':' || echo "latest")
+
+        # --- Create false positive exceptions in ACS ---
+        echo "=== Creating ACS false positive exceptions ==="
+        echo "Image scope: $REGISTRY / $REMOTE : $TAG"
+        echo ""
+
+        CREATED=0
+        while IFS=$'\t' read -r CVE VEX_STATUS; do
+          COMMENT="Automatically resolved by VEX data in TPA: ${VEX_STATUS}. Reconciled by vex-reconcile pipeline task."
+          echo "  Marking $CVE as false positive (VEX: $VEX_STATUS)..."
+
+          HTTP_CODE=$(curl -sk -o /tmp/acs-response.json -w "%{http_code}" \
+            -X POST "https://$(params.ROX_CENTRAL_ENDPOINT)/v2/vulnerability-exceptions/false-positive" \
+            -H "Authorization: Bearer $(params.ROX_API_TOKEN)" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"cves\": [\"$CVE\"],
+              \"comment\": \"$COMMENT\",
+              \"scope\": {
+                \"imageScope\": {
+                  \"registry\": \"$REGISTRY\",
+                  \"remote\": \"$REMOTE\",
+                  \"tag\": \"$TAG\"
+                }
+              }
+            }")
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "    OK ($HTTP_CODE)"
+            CREATED=$((CREATED + 1))
+          else
+            echo "    WARN: HTTP $HTTP_CODE — $(cat /tmp/acs-response.json)"
+          fi
+        done <<< "$RESOLVED_CVES"
+
+        echo ""
+        echo "=== Summary ==="
+        echo "  VEX-resolved CVEs found: $RESOLVED_COUNT"
+        echo "  ACS exceptions created:  $CREATED"
+        printf "%s" "$RESOLVED_COUNT" > "$(results.RESOLVED_CVES.path)"
+        printf "success" > "$(results.STATUS.path)"

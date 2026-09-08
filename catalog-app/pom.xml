@@ -94,7 +94,7 @@
                 <repository>
                     <id>lightwell</id>
                     <name>Red Hat Lightwell Network</name>
-                    <url>https://packages.redhat.com/lightwell/public-lightwell-demo/java/remediated/</url>
+                    <url>https://packages.redhat.com/lightwell/java/remediated/</url>
                     <releases>
                         <enabled>true</enabled>
                     </releases>
