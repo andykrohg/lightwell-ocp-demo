@@ -2,7 +2,7 @@
   "name": "Lightwell Demo — Known CVE Watch",
   "description": "Flags images containing specific CVEs targeted by this demo. Inform-only — provides visibility into CVE presence across deployments.",
   "rationale": "These CVEs represent denial-of-service and authorization bypass vulnerabilities. ACS monitors for their presence across all deployments.",
-  "remediation": "Replace affected dependencies with Lightwell Network remediated versions (e.g., woodstox-core:6.0.3.rhlw-00001).",
+  "remediation": "Replace affected dependencies with Lightwell Network remediated versions (.rhlw suffix).",
   "severity": "HIGH_SEVERITY",
   "disabled": false,
   "lifecycleStages": ["BUILD", "DEPLOY"],
@@ -28,7 +28,17 @@
             { "value": "CVE-2022-45688" },
             { "value": "CVE-2023-5072" },
             { "value": "CVE-2022-22968" },
-            { "value": "CVE-2023-20861" }
+            { "value": "CVE-2023-20860" },
+            { "value": "CVE-2023-20861" },
+            { "value": "CVE-2023-20863" },
+            { "value": "CVE-2024-38808" },
+            { "value": "CVE-2024-38816" },
+            { "value": "CVE-2025-22235" },
+            { "value": "CVE-2025-41249" },
+            { "value": "CVE-2026-40973" },
+            { "value": "CVE-2022-1471" },
+            { "value": "CVE-2023-6378" },
+            { "value": "CVE-2024-12801" }
           ]
         }
       ]

@@ -7,8 +7,9 @@ metadata:
 spec:
   description: >
     Scans an SBOM for known vulnerabilities and applies VEX (Vulnerability
-    Exploitability eXchange) data to identify which findings have been resolved
-    by the dependency supplier. Outputs a summary of remaining vs suppressed CVEs.
+    Exploitability eXchange) data from Red Hat Lightwell Network to identify
+    which findings have been resolved by the dependency supplier. Outputs a
+    summary of remaining vs suppressed CVEs.
   params:
     - name: SBOM_PATH
       type: string
@@ -17,7 +18,7 @@ spec:
     - name: VEX_PATH
       type: string
       default: ""
-      description: Path to the OpenVEX document relative to workspace root (empty to skip VEX)
+      description: Path to write the OpenVEX document relative to workspace root
     - name: REQUIRE_VEX
       type: string
       default: "false"
@@ -34,7 +35,35 @@ spec:
       description: Number of vulnerabilities remaining after VEX
     - name: STATUS
       description: Overall check status (pass or fail)
+  volumes:
+    - name: vex-data
+      configMap:
+        name: lightwell-vex
+        optional: true
   steps:
+    - name: prepare-vex
+      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      script: |
+        #!/usr/bin/env bash
+        set -eu
+        VEX_PATH="$(params.VEX_PATH)"
+        if [ -z "$VEX_PATH" ]; then
+          echo "No VEX_PATH configured — skipping VEX preparation"
+          exit 0
+        fi
+        TARGET="$(workspaces.source.path)/${VEX_PATH}"
+        if [ -f /vex-data/openvex.json ]; then
+          mkdir -p "$(dirname "$TARGET")"
+          cp /vex-data/openvex.json "$TARGET"
+          echo "Loaded Lightwell VEX data from cluster ($(wc -c < /vex-data/openvex.json) bytes)"
+        elif [ -f "$TARGET" ]; then
+          echo "Using VEX file from source repo"
+        else
+          echo "No VEX data available"
+        fi
+      volumeMounts:
+        - name: vex-data
+          mountPath: /vex-data
     - name: scan
       image: registry.access.redhat.com/ubi9/ubi:latest
       script: |

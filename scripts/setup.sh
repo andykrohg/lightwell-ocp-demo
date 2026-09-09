@@ -65,6 +65,23 @@ if [ -n "$LIGHTWELL_USERNAME" ] && [ -n "$LIGHTWELL_PASSWORD" ]; then
       <password>${LIGHTWELL_PASSWORD}</password>
     </server>
   </servers>
+  <profiles>
+    <profile>
+      <id>lightwell</id>
+      <repositories>
+        <repository>
+          <id>lightwell</id>
+          <name>Red Hat Lightwell Network</name>
+          <url>https://packages.redhat.com/lightwell/java/remediated/</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>lightwell</activeProfile>
+  </activeProfiles>
 </settings>
 XMLEOF
 )
@@ -190,7 +207,7 @@ for policy in "$PROJECT_DIR"/acs-policies/*.json; do
   fi
 done
 
-banner "Step 6: Upload Lightwell VEX data to TPA"
+banner "Step 6: Fetch Lightwell VEX data and upload to TPA"
 
 echo -n "  Obtaining OIDC token... "
 TPA_TOKEN=$(curl -sf -X POST "${TPA_OIDC_ISSUER_URL}" \
@@ -205,18 +222,81 @@ else
   echo -e "${YELLOW}failed — VEX upload will be skipped${NC}"
 fi
 
-if [ -n "$TPA_TOKEN" ]; then
-  echo -n "  Uploading Lightwell VEX document... "
-  VEX_RESPONSE=$(curl -sk -X POST "${TPA_URL}/api/v3/advisory?format=csaf" \
-    -H "Authorization: Bearer $TPA_TOKEN" \
-    -H "Content-Type: application/json" \
-    --data-binary @"$PROJECT_DIR/vex/lightwell-remediated.json" \
-    -w "%{http_code}" -o /dev/null 2>/dev/null) || true
-  if [ "$VEX_RESPONSE" -ge 200 ] 2>/dev/null && [ "$VEX_RESPONSE" -lt 300 ] 2>/dev/null; then
-    echo -e "${GREEN}OK${NC}"
-  else
-    echo -e "${YELLOW}HTTP $VEX_RESPONSE${NC}"
-  fi
+if [ -n "$TPA_TOKEN" ] && [ -n "${LIGHTWELL_USERNAME:-}" ]; then
+  VEX_TMPDIR=$(mktemp -d)
+
+  LIGHTWELL_OSV_URL="https://packages.redhat.com/api/pulp-content/lightwell/osv/java/remediated"
+  DEP_VERSIONS="1.2.12 1.33 2.7.0 2.7.18 5.3.18 6.0.3 20220320"
+
+  echo "  Fetching Lightwell OSV advisory listing..."
+  OSV_INDEX=$(curl -skL -u "${LIGHTWELL_USERNAME}:${LIGHTWELL_PASSWORD}" "${LIGHTWELL_OSV_URL}/" 2>/dev/null)
+
+  OSV_COUNT=0
+  for ver in $DEP_VERSIONS; do
+    ver_escaped=$(echo "$ver" | sed 's/\./\\./g')
+    MATCHES=$(echo "$OSV_INDEX" | grep -oE "x_RHLW-CVE-[^\"]+-${ver_escaped}\.json" | sort -u || true)
+    for fname in $MATCHES; do
+      echo -n "    ${fname} ... "
+      curl -skL -u "${LIGHTWELL_USERNAME}:${LIGHTWELL_PASSWORD}" \
+        "${LIGHTWELL_OSV_URL}/${fname}" -o "${VEX_TMPDIR}/${fname}" 2>/dev/null
+
+      RESP=$(curl -sk -X POST "${TPA_URL}/api/v3/advisory?format=osv" \
+        -H "Authorization: Bearer $TPA_TOKEN" \
+        -H "Content-Type: application/json" \
+        --data-binary @"${VEX_TMPDIR}/${fname}" \
+        -w "%{http_code}" -o /dev/null 2>/dev/null) || true
+      if [ "$RESP" -ge 200 ] 2>/dev/null && [ "$RESP" -lt 300 ] 2>/dev/null; then
+        echo -e "${GREEN}OK${NC}"
+      else
+        echo -e "${YELLOW}HTTP $RESP${NC}"
+      fi
+      OSV_COUNT=$((OSV_COUNT + 1))
+    done
+  done
+  echo "  Uploaded $OSV_COUNT Lightwell OSV advisories to TPA"
+
+  echo -n "  Generating OpenVEX for pipeline vex-check... "
+  TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  python3 - "$VEX_TMPDIR" "$TIMESTAMP" << 'PYEOF'
+import json, glob, sys, os
+tmpdir, timestamp = sys.argv[1], sys.argv[2]
+statements = []
+for f in sorted(glob.glob(os.path.join(tmpdir, "x_RHLW-*.json"))):
+    d = json.load(open(f))
+    aliases = d.get("aliases", [])
+    ghsa = [a for a in aliases if a.startswith("GHSA-")]
+    cve = [a for a in aliases if a.startswith("CVE-")]
+    vuln_id = ghsa[0] if ghsa else (cve[0] if cve else d["id"])
+    purl = d["affected"][0]["package"]["purl"]
+    cve_id = cve[0] if cve else d["id"]
+    statements.append({
+        "vulnerability": {"@id": vuln_id},
+        "products": [{"@id": purl}],
+        "status": "not_affected",
+        "justification": "vulnerable_code_not_present",
+        "statement": f"{cve_id} patch backported by Red Hat Lightwell Network."
+    })
+openvex = {
+    "@context": "https://openvex.dev/ns/v0.2.0",
+    "@id": "https://packages.redhat.com/lightwell/vex/generated",
+    "author": "Red Hat Lightwell Network",
+    "timestamp": timestamp,
+    "version": 1,
+    "statements": statements
+}
+out = os.path.join(tmpdir, "openvex.json")
+json.dump(openvex, open(out, "w"), indent=2)
+print(f"{len(statements)} statements", file=sys.stderr)
+PYEOF
+
+  oc create configmap lightwell-vex \
+    --from-file=openvex.json="${VEX_TMPDIR}/openvex.json" \
+    --dry-run=client -o yaml | oc apply -f -
+  echo -e "${GREEN}OK${NC}"
+
+  rm -rf "$VEX_TMPDIR"
+elif [ -n "$TPA_TOKEN" ]; then
+  echo -e "  ${YELLOW}Lightwell credentials not set — skipping VEX data fetch${NC}"
 fi
 
 banner "Step 7: Grant pipeline service account permissions"
