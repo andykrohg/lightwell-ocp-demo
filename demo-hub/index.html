@@ -10,7 +10,6 @@
       --act-problem: #c9190b;
       --act-solution: #0066cc;
       --act-enforce: #3e8635;
-      --act-bonus: #6a6e73;
     }
     body { margin: 0; background: #f0f0f0; }
 
@@ -49,7 +48,6 @@
     .act-label.problem { color: var(--act-problem); }
     .act-label.solution { color: var(--act-solution); }
     .act-label.enforce { color: var(--act-enforce); }
-    .act-label.bonus { color: var(--act-bonus); }
     .act-label:first-child { margin-top: 0; }
 
     /* Step cards */
@@ -103,11 +101,6 @@
     }
     .step-links a:hover { background: #f0f4f8; border-color: #0066cc; }
 
-    /* Dep comparison table */
-    .dep-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; }
-    .dep-table th, .dep-table td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid #e8e8e8; }
-    .dep-table th { background: #f5f5f5; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6a6e73; }
-    .dep-table code { font-size: 0.8rem; }
     .badge {
       display: inline-block;
       padding: 0.1rem 0.45rem;
@@ -151,7 +144,6 @@
       .demo-content { padding: 1rem 0.5rem; }
       .timeline { padding-left: 3rem; }
       .step-num { left: -3rem; width: 2rem; height: 2rem; line-height: 2rem; font-size: 0.8rem; }
-      .dep-table { font-size: 0.75rem; }
     }
   </style>
 </head>
@@ -173,10 +165,11 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-problem);">1</div>
     <h3>Build the Vulnerable App</h3>
-    <p>A catalog microservice is built with standard Maven Central dependencies. The pipeline runs a <strong>VEX check</strong> that scans the SBOM for known vulnerabilities.</p>
+    <p>A catalog microservice uses <strong>woodstox-core 6.0.3</strong> for XML parsing. This version contains <span class="badge badge-cve">CVE-2022-40152</span> &mdash; a denial-of-service vulnerability where a tiny crafted XML document triggers unbounded recursion in the DTD parser, crashing the service.</p>
+    <div class="pipeline-box">make pipeline-vulnerable</div>
     <div class="look-for">
       <strong>What to show</strong>
-      Watch the pipeline run in OpenShift. In the <em>vex-check</em> step logs, note the full list of CVEs found. No VEX data applies to the standard Maven Central versions, so all vulnerabilities remain in the findings.
+      Watch the pipeline run in OpenShift. In the <em>vex-check</em> step logs, note that CVE-2022-40152 appears in the vulnerability list. No VEX data applies to the standard Maven Central version, so the CVE remains unresolved.
     </div>
     <div class="step-links">
       <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
@@ -186,10 +179,10 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-problem);">2</div>
     <h3>Examine the Results</h3>
-    <p>The SBOM was uploaded to Trusted Profile Analyzer for tracking, and ACS flagged policy violations against the vulnerable image. Since policies are in <strong>inform</strong> mode, the app deployed despite its vulnerabilities.</p>
+    <p>The SBOM was uploaded to Trusted Profile Analyzer for tracking, and ACS flagged a policy violation for CVE-2022-40152. Since the policy is in <strong>inform</strong> mode, the app deployed despite the vulnerability.</p>
     <div class="look-for">
       <strong>What to show</strong>
-      In TPA, find the <em>catalog-app</em> SBOM tagged <em>vulnerable</em> and check matched advisories. In ACS, filter violations by namespace <code>${DEMO_NAMESPACE}</code> and note the CVE-based policy violations.
+      In TPA, find the <em>catalog-app</em> SBOM tagged <em>vulnerable</em>. In ACS, filter violations by namespace <code>${DEMO_NAMESPACE}</code> and note the CVE-2022-40152 policy violation.
     </div>
     <div class="step-links">
       <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
@@ -203,70 +196,36 @@
 
   <div class="step">
     <div class="step-num" style="background: var(--act-solution);">3</div>
-    <h3>Lightwell Network: Drop-In Remediated Dependencies</h3>
-    <p>Lightwell provides the same dependency versions with backported security patches. No code changes, no API breaks &mdash; just a different Maven repository. The version suffix <code>.rhlw-NNNNN</code> indicates a patched build.</p>
-    <p>Lightwell also publishes <strong>VEX</strong> (Vulnerability Exploitability eXchange) data for its remediated packages. VEX tells downstream tooling: <em>"this CVE has been resolved in this build &mdash; the vulnerable code is not present."</em></p>
-    <table class="dep-table">
-      <thead>
-        <tr>
-          <th>Dependency</th>
-          <th>Vulnerable</th>
-          <th>Remediated</th>
-          <th>CVEs Fixed</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Woodstox Core</strong><br><code>com.fasterxml.woodstox:woodstox-core</code></td>
-          <td><span class="badge badge-red">6.0.3</span></td>
-          <td><span class="badge badge-green">6.0.3.rhlw-00001</span></td>
-          <td><span class="badge badge-cve">CVE-2022-40152</span> <span class="badge badge-cve">CVE-2022-40156</span></td>
-        </tr>
-        <tr>
-          <td><strong>JsonPath</strong><br><code>com.jayway.jsonpath:json-path</code></td>
-          <td><span class="badge badge-red">2.7.0</span></td>
-          <td><span class="badge badge-green">2.7.0.rhlw-00001</span></td>
-          <td><span class="badge badge-cve">CVE-2023-51074</span> <span class="badge badge-cve">CVE-2023-1370</span></td>
-        </tr>
-        <tr>
-          <td><strong>org.json</strong><br><code>org.json:json</code></td>
-          <td><span class="badge badge-red">20220320</span></td>
-          <td><span class="badge badge-green">20220320.0.0.rhlw-00003</span></td>
-          <td><span class="badge badge-cve">CVE-2022-45688</span> <span class="badge badge-cve">CVE-2023-5072</span></td>
-        </tr>
-        <tr>
-          <td><strong>Spring Core</strong><br><code>org.springframework:spring-core</code></td>
-          <td><span class="badge badge-red">5.3.18</span></td>
-          <td><span class="badge badge-green">5.3.18.rhlw-00003</span></td>
-          <td><span class="badge badge-cve">CVE-2025-41249</span> <span class="badge badge-cve">CVE-2026-41848</span></td>
-        </tr>
-      </tbody>
-    </table>
+    <h3>Lightwell Network: Drop-In Remediation</h3>
+    <p>Lightwell provides the same dependency version with a backported security patch. No code changes, no API breaks &mdash; just a different Maven repository. The <code>.rhlw</code> suffix indicates a patched build.</p>
+    <p style="margin: 0.75rem 0; font-size: 0.95rem;">
+      <code>woodstox-core</code>&ensp;
+      <span class="badge badge-red">6.0.3</span>
+      &ensp;&rarr;&ensp;
+      <span class="badge badge-green">6.0.3.rhlw-00001</span>
+    </p>
+    <p>The patch adds a recursion depth limit of 500 to the DTD parser, eliminating the DoS vector. Lightwell also publishes <strong>VEX</strong> data declaring this package as <em>not_affected</em> for CVE-2022-40152.</p>
+    <div class="pipeline-box">make pipeline-remediated</div>
+    <div class="look-for">
+      <strong>What to show</strong>
+      In the <em>vex-check</em> step logs, compare the summary: <em>Suppressed by VEX: 1</em>. CVE-2022-40152 is confirmed as patched and removed from the findings.
+    </div>
+    <div class="step-links">
+      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
+      <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
+    </div>
   </div>
 
   <div class="step">
     <div class="step-num" style="background: var(--act-solution);">4</div>
-    <h3>Compare VEX Check Results</h3>
-    <p>The remediated build runs the same pipeline. This time, Lightwell's VEX data is applied during the <strong>pipeline vex-check step</strong>. The CVEs covered by VEX are <strong>suppressed</strong> &mdash; they're confirmed as patched in the <code>.rhlw</code> builds.</p>
-    <div class="look-for">
-      <strong>What to show</strong>
-      In the pipeline run logs, find the <em>vex-check</em> step. Compare the summary line: <em>Total vulnerabilities &rarr; Suppressed by VEX &rarr; Remaining</em>. The Lightwell-covered CVEs are suppressed, leaving only unrelated findings. Note: TPA tracks the SBOM for provenance but doesn't apply VEX to its own CVE view &mdash; the suppression is only visible in the pipeline logs.
-    </div>
-    <div class="step-links">
-      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="step-num" style="background: var(--act-solution);">5</div>
     <h3>Live Exploit: CVE-2022-40152</h3>
-    <p>Prove the remediation works functionally. A tiny XML payload (&lt;1 KB) exploits Woodstox DTD recursion to crash the vulnerable app. The Lightwell-patched version rejects it safely at a depth limit.</p>
-    <div class="pipeline-box">./scripts/exploit-demo.sh</div>
+    <p>Prove the remediation works functionally. A tiny XML payload (&lt;1 KB) with deeply nested DTD declarations exploits unbounded recursion to crash the vulnerable app. The Lightwell-patched version rejects it at a depth limit.</p>
+    <div class="pipeline-box">./scripts/exploit-demo.sh http://&lt;vulnerable-route&gt; http://&lt;remediated-route&gt;</div>
     <div class="look-for">
       <strong>What to show</strong>
-      The vulnerable app returns HTTP 500 (StackOverflowError). The remediated app handles the same payload cleanly &mdash; same version, same API, different security posture.
+      The vulnerable app returns HTTP 500 (StackOverflowError) or crashes entirely. The remediated app handles the same payload cleanly &mdash; same version, same API, patched security posture.
     </div>
-    <p class="note">Requires terminal access to the cluster.</p>
+    <p class="note">Run from a terminal with access to the cluster routes.</p>
   </div>
 
   <!-- ── ACT 3: ENFORCE ── -->
@@ -274,12 +233,13 @@
   <div class="act-label enforce">Act 3 — Lock the Door</div>
 
   <div class="step">
-    <div class="step-num" style="background: var(--act-enforce);">6</div>
+    <div class="step-num" style="background: var(--act-enforce);">5</div>
     <h3>Enable VEX Enforcement</h3>
-    <p>Now that a clean alternative exists, require that builds include verified VEX remediation data. Builds that ship unvetted dependencies &mdash; with zero VEX suppressions &mdash; are blocked. This is the shift from "detect" to "prevent."</p>
+    <p>Now that a clean alternative exists, require VEX remediation data before builds proceed. Builds shipping unvetted dependencies &mdash; with zero VEX suppressions &mdash; are blocked.</p>
+    <div class="pipeline-box">make pipeline-enforce</div>
     <div class="look-for">
       <strong>What to show</strong>
-      The pipeline is re-triggered with <code>REQUIRE_VEX=true</code>. Since the vulnerable build's dependencies don't match any VEX statements, zero CVEs are suppressed &mdash; and the vex-check step <strong>fails the build</strong>.
+      The vulnerable build is re-triggered with <code>REQUIRE_VEX=true</code>. Since the standard woodstox-core doesn't match any VEX statements, zero CVEs are suppressed and the vex-check step <strong>fails the build</strong>.
     </div>
     <div class="step-links">
       <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
@@ -287,7 +247,7 @@
   </div>
 
   <div class="step">
-    <div class="step-num" style="background: var(--act-enforce);">7</div>
+    <div class="step-num" style="background: var(--act-enforce);">6</div>
     <h3>The Full Supply Chain</h3>
     <p>With VEX enforcement in the pipeline and cosign image signing on every build, the supply chain is locked down:</p>
     <ol style="font-size: 0.9rem; color: #4a4a4a; line-height: 1.8; padding-left: 1.25rem;">
@@ -308,13 +268,12 @@
   <div class="takeaways">
     <h3>Key Takeaways</h3>
     <ul>
-      <li><strong>Drop-in replacement</strong> &mdash; no code changes, no version upgrades</li>
-      <li><strong>Critical CVEs eliminated</strong> at the dependency level by Lightwell Network</li>
+      <li><strong>Drop-in replacement</strong> &mdash; no code changes, just switch the Maven profile</li>
+      <li><strong>CVE-2022-40152 eliminated</strong> at the dependency level by Lightwell Network</li>
       <li><strong>VEX data</strong> enables accurate vulnerability assessment, distinguishing patched from unpatched</li>
       <li><strong>Pipeline enforcement</strong> blocks builds with unresolved vulnerabilities</li>
       <li><strong>Image signing</strong> with Sigstore/cosign for supply chain integrity</li>
       <li><strong>Full SBOM visibility</strong> tracked and analyzed in Trusted Profile Analyzer</li>
-      <li><strong>SLSA Level 3</strong> build provenance for all Lightwell artifacts</li>
     </ul>
   </div>
 

@@ -1,8 +1,8 @@
 NAMESPACE ?= lightwell-demo
 IMAGE_REGISTRY ?= quay.io/andy_krohg
 
-.PHONY: help setup demo reset build-vulnerable build-remediated hub-build \
-        pipeline-vulnerable pipeline-remediated pipeline-logs status
+.PHONY: help setup reset build-vulnerable build-remediated hub-build \
+        pipeline-vulnerable pipeline-remediated pipeline-enforce pipeline-logs status
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -10,9 +10,6 @@ help: ## Show this help
 
 setup: ## One-time cluster setup (requires demo.env with ROX_API_TOKEN)
 	./scripts/setup.sh
-
-demo: ## Run the guided interactive demo
-	./scripts/demo.sh
 
 reset: ## Reset demo state (deletes pipeline runs and app deployments)
 	./scripts/reset.sh
@@ -55,6 +52,20 @@ pipeline-remediated: ## Trigger the remediated build pipeline
 		-e "s|__ROX_CENTRAL_ENDPOINT__|$$ROX_CENTRAL_ENDPOINT|g" \
 		-e "s|__ROX_API_TOKEN__|$$ROX_API_TOKEN|g" \
 		tekton/pipelinerun-remediated.yaml | oc create -n $(NAMESPACE) -f -
+
+pipeline-enforce: ## Trigger vulnerable build with VEX enforcement (should fail)
+	@source ./scripts/resolve-env.sh && \
+	sed \
+		-e "s|__DEMO_NAMESPACE__|$$DEMO_NAMESPACE|g" \
+		-e "s|__REGISTRY_HOST__|$$REGISTRY_HOST|g" \
+		-e "s|__TPA_URL__|$$TPA_URL|g" \
+		-e "s|__TPA_OIDC_ISSUER_URL__|$$TPA_OIDC_ISSUER_URL|g" \
+		-e "s|__TPA_CLIENT_SECRET__|$$TPA_CLIENT_SECRET|g" \
+		-e "s|__ROX_CENTRAL_ENDPOINT__|$$ROX_CENTRAL_ENDPOINT|g" \
+		-e "s|__ROX_API_TOKEN__|$$ROX_API_TOKEN|g" \
+		tekton/pipelinerun-vulnerable.yaml \
+	| awk '/name: SOFT_FAIL/{print; getline; print; print "    - name: REQUIRE_VEX"; print "      value: \"true\""; next}1' \
+	| oc create -n $(NAMESPACE) -f -
 
 pipeline-logs: ## Follow the latest pipeline run logs
 	tkn pipelinerun logs -f --last -n $(NAMESPACE)
