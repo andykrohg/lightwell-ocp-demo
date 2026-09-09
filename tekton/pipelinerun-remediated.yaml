@@ -46,6 +46,3 @@ spec:
               storage: 5Gi
     - name: maven-settings
       emptyDir: {}
-    - name: maven-local-repo
-      persistentVolumeClaim:
-        claimName: maven-cache-pvc

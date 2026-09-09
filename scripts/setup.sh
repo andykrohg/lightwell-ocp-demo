@@ -62,9 +62,8 @@ else
   echo -e "  Cosign signing key ${YELLOW}already exists${NC}"
 fi
 
-banner "Step 3: Create pipeline workspace PVCs"
+banner "Step 3: Create pipeline workspace PVC"
 oc apply -f "$PROJECT_DIR/tekton/workspace-pvc.yaml"
-oc apply -f "$PROJECT_DIR/tekton/maven-cache-pvc.yaml"
 
 banner "Step 4: Install Tekton tasks and pipeline"
 echo "  Installing standard tasks from Tekton catalog..."
