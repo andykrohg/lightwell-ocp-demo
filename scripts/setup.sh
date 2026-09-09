@@ -177,15 +177,7 @@ oc apply -f "$PROJECT_DIR/manifests/base/registry/"
 echo "  Waiting for registry to be ready..."
 oc rollout status deployment/registry -n "$DEMO_NAMESPACE" --timeout=60s
 
-banner "Step 8: Deploy catalog apps"
-kustomize build "$PROJECT_DIR/manifests/overlays/vulnerable" \
-  | sed -e "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
-  | oc apply -n "$DEMO_NAMESPACE" -f -
-kustomize build "$PROJECT_DIR/manifests/overlays/remediated" \
-  | sed -e "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
-  | oc apply -n "$DEMO_NAMESPACE" -f -
-
-banner "Step 9: Deploy demo hub"
+banner "Step 8: Deploy demo hub"
 kustomize build "$PROJECT_DIR/manifests/overlays/dashboard" \
   | sed \
     -e "s|__TPA_CONSOLE_URL__|${TPA_CONSOLE_URL}|g" \
@@ -203,7 +195,6 @@ echo -e "ACS Console:  ${GREEN}${ACS_CONSOLE_URL}${NC}"
 echo -e "OCP Console:  ${GREEN}${OCP_CONSOLE_URL}${NC}"
 echo ""
 echo "Next steps:"
-echo "  1. Run 'make demo' or './scripts/demo.sh' to start the guided demo"
-echo "  2. Or trigger pipelines manually:"
-echo "     make pipeline-vulnerable"
-echo "     make pipeline-remediated"
+echo "  1. Run 'make pipeline-vulnerable' to trigger the vulnerable build"
+echo "  2. Run 'make pipeline-remediated' to trigger the remediated build"
+echo "  3. Open the Demo Hub for the guided walkthrough"
