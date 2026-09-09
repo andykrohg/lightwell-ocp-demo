@@ -9,7 +9,11 @@
   "categories": ["Security Best Practices"],
   "scope": [
     {
-      "namespace": "lightwell-demo"
+      "namespace": "lightwell-demo",
+      "label": {
+        "key": "app",
+        "value": "catalog-app"
+      }
     }
   ],
   "policySections": [
