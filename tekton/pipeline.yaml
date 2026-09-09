@@ -64,6 +64,9 @@ spec:
       description: Workspace shared across pipeline tasks
     - name: maven-settings
       description: Optional workspace for Maven settings.xml (public demo repo needs no credentials)
+    - name: maven-local-repo
+      description: Persistent Maven local repo cache to avoid re-downloading dependencies
+      optional: true
 
   tasks:
     # 1. Clone source code
@@ -106,6 +109,8 @@ spec:
           workspace: shared-workspace
         - name: maven-settings
           workspace: maven-settings
+        - name: maven-local-repo
+          workspace: maven-local-repo
 
     # 3. VEX-aware vulnerability check
     - name: vex-check

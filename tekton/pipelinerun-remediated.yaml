@@ -47,3 +47,6 @@ spec:
     - name: maven-settings
       secret:
         secretName: lightwell-maven-settings
+    - name: maven-local-repo
+      persistentVolumeClaim:
+        claimName: maven-cache-pvc
