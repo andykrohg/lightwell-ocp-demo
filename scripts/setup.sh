@@ -36,7 +36,6 @@ echo "  TPA_URL               = ${TPA_URL}"
 echo "  ROX_CENTRAL_ENDPOINT  = ${ROX_CENTRAL_ENDPOINT}"
 echo "  ACS_CONSOLE_URL       = ${ACS_CONSOLE_URL}"
 echo "  OCP_CONSOLE_URL       = ${OCP_CONSOLE_URL}"
-echo "  LIGHTWELL_USERNAME    = ${LIGHTWELL_USERNAME:-(not set)}"
 echo ""
 
 banner "Step 1: Create OpenShift project"
@@ -54,44 +53,6 @@ oc create secret generic tpa-credentials \
   --from-literal=client-secret="${TPA_CLIENT_SECRET}" \
   --from-literal=oidc-issuer="${TPA_OIDC_ISSUER}" \
   --dry-run=client -o yaml | oc apply -f -
-
-if [ -n "$LIGHTWELL_USERNAME" ] && [ -n "$LIGHTWELL_PASSWORD" ]; then
-  SETTINGS_XML=$(cat <<XMLEOF
-<settings>
-  <servers>
-    <server>
-      <id>lightwell</id>
-      <username>${LIGHTWELL_USERNAME}</username>
-      <password>${LIGHTWELL_PASSWORD}</password>
-    </server>
-  </servers>
-  <profiles>
-    <profile>
-      <id>lightwell</id>
-      <repositories>
-        <repository>
-          <id>lightwell</id>
-          <name>Red Hat Lightwell Network</name>
-          <url>https://packages.redhat.com/lightwell/java/remediated/</url>
-          <releases><enabled>true</enabled></releases>
-          <snapshots><enabled>false</enabled></snapshots>
-        </repository>
-      </repositories>
-    </profile>
-  </profiles>
-  <activeProfiles>
-    <activeProfile>lightwell</activeProfile>
-  </activeProfiles>
-</settings>
-XMLEOF
-)
-  oc create secret generic lightwell-maven-settings \
-    --from-literal=settings.xml="$SETTINGS_XML" \
-    --dry-run=client -o yaml | oc apply -f -
-  echo -e "  Lightwell Maven settings ${GREEN}configured${NC}"
-else
-  echo -e "  Lightwell credentials ${YELLOW}not set${NC} — remediated builds will use public access only"
-fi
 
 if ! oc get secret cosign-signing-key -n "$DEMO_NAMESPACE" &>/dev/null; then
   echo "  Generating cosign key pair..."
@@ -208,108 +169,16 @@ for policy in "$PROJECT_DIR"/acs-policies/*.json; do
   fi
 done
 
-banner "Step 6: Fetch Lightwell VEX data and upload to TPA"
-
-echo -n "  Obtaining OIDC token... "
-TPA_TOKEN=$(curl -sf -X POST "${TPA_OIDC_ISSUER_URL}" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=client_credentials" \
-  -d "client_id=${TPA_CLIENT_ID}" \
-  -d "client_secret=${TPA_CLIENT_SECRET}" \
-  -d "scope=openid" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])" 2>/dev/null) || true
-if [ -n "$TPA_TOKEN" ]; then
-  echo -e "${GREEN}OK${NC}"
-else
-  echo -e "${YELLOW}failed — VEX upload will be skipped${NC}"
-fi
-
-if [ -n "$TPA_TOKEN" ] && [ -n "${LIGHTWELL_USERNAME:-}" ]; then
-  VEX_TMPDIR=$(mktemp -d)
-
-  LIGHTWELL_OSV_URL="https://packages.redhat.com/api/pulp-content/lightwell/osv/java/remediated"
-  DEP_VERSIONS="1.2.12 1.33 2.7.0 2.7.18 5.3.18 6.0.3 20220320"
-
-  echo "  Fetching Lightwell OSV advisory listing..."
-  OSV_INDEX=$(curl -skL -u "${LIGHTWELL_USERNAME}:${LIGHTWELL_PASSWORD}" "${LIGHTWELL_OSV_URL}/" 2>/dev/null)
-
-  OSV_COUNT=0
-  for ver in $DEP_VERSIONS; do
-    ver_escaped=$(echo "$ver" | sed 's/\./\\./g')
-    MATCHES=$(echo "$OSV_INDEX" | grep -oE "x_RHLW-CVE-[^\"]+-${ver_escaped}\.json" | sort -u || true)
-    for fname in $MATCHES; do
-      echo -n "    ${fname} ... "
-      curl -skL -u "${LIGHTWELL_USERNAME}:${LIGHTWELL_PASSWORD}" \
-        "${LIGHTWELL_OSV_URL}/${fname}" -o "${VEX_TMPDIR}/${fname}" 2>/dev/null
-
-      RESP=$(curl -sk -X POST "${TPA_URL}/api/v3/advisory?format=osv" \
-        -H "Authorization: Bearer $TPA_TOKEN" \
-        -H "Content-Type: application/json" \
-        --data-binary @"${VEX_TMPDIR}/${fname}" \
-        -w "%{http_code}" -o /dev/null 2>/dev/null) || true
-      if [ "$RESP" -ge 200 ] 2>/dev/null && [ "$RESP" -lt 300 ] 2>/dev/null; then
-        echo -e "${GREEN}OK${NC}"
-      else
-        echo -e "${YELLOW}HTTP $RESP${NC}"
-      fi
-      OSV_COUNT=$((OSV_COUNT + 1))
-    done
-  done
-  echo "  Uploaded $OSV_COUNT Lightwell OSV advisories to TPA"
-
-  echo -n "  Generating OpenVEX for pipeline vex-check... "
-  TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-  python3 - "$VEX_TMPDIR" "$TIMESTAMP" << 'PYEOF'
-import json, glob, sys, os
-tmpdir, timestamp = sys.argv[1], sys.argv[2]
-statements = []
-for f in sorted(glob.glob(os.path.join(tmpdir, "x_RHLW-*.json"))):
-    d = json.load(open(f))
-    aliases = d.get("aliases", [])
-    ghsa = [a for a in aliases if a.startswith("GHSA-")]
-    cve = [a for a in aliases if a.startswith("CVE-")]
-    vuln_id = ghsa[0] if ghsa else (cve[0] if cve else d["id"])
-    purl = d["affected"][0]["package"]["purl"]
-    cve_id = cve[0] if cve else d["id"]
-    statements.append({
-        "vulnerability": {"@id": vuln_id},
-        "products": [{"@id": purl}],
-        "status": "not_affected",
-        "justification": "vulnerable_code_not_present",
-        "statement": f"{cve_id} patch backported by Red Hat Lightwell Network."
-    })
-openvex = {
-    "@context": "https://openvex.dev/ns/v0.2.0",
-    "@id": "https://packages.redhat.com/lightwell/vex/generated",
-    "author": "Red Hat Lightwell Network",
-    "timestamp": timestamp,
-    "version": 1,
-    "statements": statements
-}
-out = os.path.join(tmpdir, "openvex.json")
-json.dump(openvex, open(out, "w"), indent=2)
-print(f"{len(statements)} statements", file=sys.stderr)
-PYEOF
-
-  oc create configmap lightwell-vex \
-    --from-file=openvex.json="${VEX_TMPDIR}/openvex.json" \
-    --dry-run=client -o yaml | oc apply -f -
-  echo -e "${GREEN}OK${NC}"
-
-  rm -rf "$VEX_TMPDIR"
-elif [ -n "$TPA_TOKEN" ]; then
-  echo -e "  ${YELLOW}Lightwell credentials not set — skipping VEX data fetch${NC}"
-fi
-
-banner "Step 7: Grant pipeline service account permissions"
+banner "Step 6: Grant pipeline service account permissions"
 oc adm policy add-role-to-user edit system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
 oc adm policy add-scc-to-user privileged system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
 
-banner "Step 8: Deploy in-cluster container registry"
+banner "Step 7: Deploy in-cluster container registry"
 oc apply -f "$PROJECT_DIR/manifests/base/registry/"
 echo "  Waiting for registry to be ready..."
 oc rollout status deployment/registry -n "$DEMO_NAMESPACE" --timeout=60s
 
-banner "Step 9: Deploy catalog apps"
+banner "Step 8: Deploy catalog apps"
 kustomize build "$PROJECT_DIR/manifests/overlays/vulnerable" \
   | sed -e "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
   | oc apply -n "$DEMO_NAMESPACE" -f -
@@ -317,7 +186,7 @@ kustomize build "$PROJECT_DIR/manifests/overlays/remediated" \
   | sed -e "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
   | oc apply -n "$DEMO_NAMESPACE" -f -
 
-banner "Step 10: Deploy demo hub"
+banner "Step 9: Deploy demo hub"
 kustomize build "$PROJECT_DIR/manifests/overlays/dashboard" \
   | sed \
     -e "s|__TPA_CONSOLE_URL__|${TPA_CONSOLE_URL}|g" \

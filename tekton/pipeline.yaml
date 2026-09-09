@@ -122,7 +122,7 @@ spec:
         - name: SBOM_PATH
           value: catalog-app/target/bom.json
         - name: VEX_PATH
-          value: vex/lightwell-remediated.openvex.json
+          value: vex/lightwell.openvex.json
         - name: REQUIRE_VEX
           value: $(params.REQUIRE_VEX)
       workspaces:

@@ -45,8 +45,7 @@ spec:
             requests:
               storage: 5Gi
     - name: maven-settings
-      secret:
-        secretName: lightwell-maven-settings
+      emptyDir: {}
     - name: maven-local-repo
       persistentVolumeClaim:
         claimName: maven-cache-pvc
