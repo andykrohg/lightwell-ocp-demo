@@ -190,12 +190,24 @@
     </div>
   </div>
 
+  <div class="step">
+    <div class="step-num" style="background: var(--act-problem);">3</div>
+    <h3>Prove It: Live Exploit</h3>
+    <p>The scanners say it&rsquo;s vulnerable &mdash; let&rsquo;s prove it. A tiny XML payload (&lt;1 KB) with deeply nested DTD declarations exploits unbounded recursion in the Woodstox parser, crashing the service.</p>
+    <div class="pipeline-box">./scripts/exploit-demo.sh http://&lt;vulnerable-route&gt;</div>
+    <div class="look-for">
+      <strong>What to show</strong>
+      The vulnerable app returns HTTP 500 (StackOverflowError) or crashes entirely. A single request &mdash; under 1 KB &mdash; takes the service down. This is the real-world impact of leaving CVE-2022-40152 unpatched.
+    </div>
+    <p class="note">Run from a terminal with access to the cluster routes.</p>
+  </div>
+
   <!-- ── ACT 2: THE SOLUTION ── -->
 
   <div class="act-label solution">Act 2 — The Fix</div>
 
   <div class="step">
-    <div class="step-num" style="background: var(--act-solution);">3</div>
+    <div class="step-num" style="background: var(--act-solution);">4</div>
     <h3>Lightwell Network: Drop-In Remediation</h3>
     <p>Lightwell provides the same dependency version with a backported security patch. No code changes, no API breaks &mdash; just a different Maven repository. The <code>.rhlw</code> suffix indicates a patched build.</p>
     <p style="margin: 0.75rem 0; font-size: 0.95rem;">
@@ -208,7 +220,7 @@
     <div class="pipeline-box">make pipeline-remediated</div>
     <div class="look-for">
       <strong>What to show</strong>
-      In the <em>vex-check</em> step logs, compare the summary: <em>Suppressed by VEX: 1</em>. CVE-2022-40152 is confirmed as patched and removed from the findings.
+      In the <em>vex-check</em> step logs, compare the summary: <em>Suppressed by VEX: 1</em>. CVE-2022-40152 is confirmed as patched and removed from the findings. The <em>vex-reconcile</em> step also creates an ACS false-positive exception for CVE-2022-40152 &mdash; approve it in ACS to clear the violation.
     </div>
     <div class="step-links">
       <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
@@ -217,13 +229,13 @@
   </div>
 
   <div class="step">
-    <div class="step-num" style="background: var(--act-solution);">4</div>
-    <h3>Live Exploit: CVE-2022-40152</h3>
-    <p>Prove the remediation works functionally. A tiny XML payload (&lt;1 KB) with deeply nested DTD declarations exploits unbounded recursion to crash the vulnerable app. The Lightwell-patched version rejects it at a depth limit.</p>
+    <div class="step-num" style="background: var(--act-solution);">5</div>
+    <h3>Same Exploit, Different Outcome</h3>
+    <p>Re-run the same exploit against both apps side by side. Same version, same API &mdash; only the dependency source changed.</p>
     <div class="pipeline-box">./scripts/exploit-demo.sh http://&lt;vulnerable-route&gt; http://&lt;remediated-route&gt;</div>
     <div class="look-for">
       <strong>What to show</strong>
-      The vulnerable app returns HTTP 500 (StackOverflowError) or crashes entirely. The remediated app handles the same payload cleanly &mdash; same version, same API, patched security posture.
+      The vulnerable app crashes again. The remediated app rejects the payload cleanly at the depth limit &mdash; no stack overflow, no downtime. The Lightwell patch is functionally verified.
     </div>
     <p class="note">Run from a terminal with access to the cluster routes.</p>
   </div>
@@ -233,7 +245,7 @@
   <div class="act-label enforce">Act 3 — Lock the Door</div>
 
   <div class="step">
-    <div class="step-num" style="background: var(--act-enforce);">5</div>
+    <div class="step-num" style="background: var(--act-enforce);">6</div>
     <h3>Enable VEX Enforcement</h3>
     <p>Now that a clean alternative exists, require VEX remediation data before builds proceed. Builds shipping unvetted dependencies &mdash; with zero VEX suppressions &mdash; are blocked.</p>
     <div class="pipeline-box">make pipeline-enforce</div>
@@ -247,14 +259,14 @@
   </div>
 
   <div class="step">
-    <div class="step-num" style="background: var(--act-enforce);">6</div>
+    <div class="step-num" style="background: var(--act-enforce);">7</div>
     <h3>The Full Supply Chain</h3>
-    <p>With VEX enforcement in the pipeline and cosign image signing on every build, the supply chain is locked down:</p>
+    <p>With VEX enforcement in the pipeline and automated VEX reconciliation between TPA and ACS, the supply chain is locked down:</p>
     <ol style="font-size: 0.9rem; color: #4a4a4a; line-height: 1.8; padding-left: 1.25rem;">
       <li><strong>Pipeline vex-check</strong> &mdash; blocks builds without verified remediation data</li>
-      <li><strong>Cosign signing</strong> &mdash; only pipeline-built images are trusted</li>
-      <li><strong>ACS</strong> &mdash; monitors CVEs across deployments and enforces image signature verification</li>
       <li><strong>TPA</strong> &mdash; tracks every SBOM and advisory for full supply chain visibility</li>
+      <li><strong>VEX reconciliation</strong> &mdash; automatically creates ACS exceptions for CVEs resolved by vendor VEX data</li>
+      <li><strong>ACS</strong> &mdash; monitors CVEs across deployments with policy-driven alerting</li>
     </ol>
     <div class="step-links">
       <a href="${ACS_CONSOLE_URL}/main/policies" target="_blank">ACS &mdash; Policies</a>
@@ -272,7 +284,7 @@
       <li><strong>CVE-2022-40152 eliminated</strong> at the dependency level by Lightwell Network</li>
       <li><strong>VEX data</strong> enables accurate vulnerability assessment, distinguishing patched from unpatched</li>
       <li><strong>Pipeline enforcement</strong> blocks builds with unresolved vulnerabilities</li>
-      <li><strong>Image signing</strong> with Sigstore/cosign for supply chain integrity</li>
+      <li><strong>Automated VEX reconciliation</strong> bridges TPA advisory data with ACS policy enforcement</li>
       <li><strong>Full SBOM visibility</strong> tracked and analyzed in Trusted Profile Analyzer</li>
     </ul>
   </div>
