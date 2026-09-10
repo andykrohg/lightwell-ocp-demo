@@ -29,6 +29,7 @@ if [ -z "$ROX_API_TOKEN" ]; then
 fi
 
 echo "  DEMO_NAMESPACE        = ${DEMO_NAMESPACE}"
+echo "  CI_NAMESPACE          = ${CI_NAMESPACE}"
 echo "  TPA_NAMESPACE         = ${TPA_NAMESPACE}"
 echo "  APPS_DOMAIN           = ${APPS_DOMAIN}"
 echo "  REGISTRY_HOST         = ${REGISTRY_HOST}"
@@ -38,35 +39,33 @@ echo "  ACS_CONSOLE_URL       = ${ACS_CONSOLE_URL}"
 echo "  OCP_CONSOLE_URL       = ${OCP_CONSOLE_URL}"
 echo ""
 
-banner "Step 1: Create OpenShift project"
+banner "Step 1: Create OpenShift projects"
 oc new-project "$DEMO_NAMESPACE" 2>/dev/null || oc project "$DEMO_NAMESPACE"
+oc new-project "$CI_NAMESPACE" 2>/dev/null || oc project "$CI_NAMESPACE"
 
 banner "Step 2: Create secrets"
 
-oc create secret generic acs-credentials \
+oc create secret generic acs-credentials -n "$CI_NAMESPACE" \
   --from-literal=rox-api-token="${ROX_API_TOKEN}" \
   --from-literal=rox-central-endpoint="${ROX_CENTRAL_ENDPOINT}" \
   --dry-run=client -o yaml | oc apply -f -
 
-oc create secret generic tpa-credentials \
+oc create secret generic tpa-credentials -n "$CI_NAMESPACE" \
   --from-literal=client-id="${TPA_CLIENT_ID}" \
   --from-literal=client-secret="${TPA_CLIENT_SECRET}" \
   --from-literal=oidc-issuer="${TPA_OIDC_ISSUER}" \
   --dry-run=client -o yaml | oc apply -f -
 
-banner "Step 3: Create pipeline workspace PVC"
-oc apply -f "$PROJECT_DIR/tekton/workspace-pvc.yaml"
-
-banner "Step 4: Install Tekton tasks and pipeline"
+banner "Step 3: Install Tekton tasks and pipeline"
 echo "  Installing standard tasks from Tekton catalog..."
-oc apply -n "$DEMO_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.9/git-clone.yaml
-oc apply -n "$DEMO_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/maven/0.3/maven.yaml
-oc apply -n "$DEMO_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/buildah/0.8/buildah.yaml
+oc apply -n "$CI_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.9/git-clone.yaml
+oc apply -n "$CI_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/maven/0.3/maven.yaml
+oc apply -n "$CI_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/buildah/0.8/buildah.yaml
 echo "  Installing custom tasks..."
-oc apply -f "$PROJECT_DIR/tekton/tasks/"
-oc apply -f "$PROJECT_DIR/tekton/pipeline.yaml"
+oc apply -n "$CI_NAMESPACE" -f "$PROJECT_DIR/tekton/tasks/"
+oc apply -n "$CI_NAMESPACE" -f "$PROJECT_DIR/tekton/pipeline.yaml"
 
-banner "Step 5: Configure ACS integrations and policies"
+banner "Step 4: Configure ACS integrations and policies"
 
 echo -n "  Registering in-cluster registry... "
 REG_RESPONSE=$(curl -sk -X POST "https://${ROX_CENTRAL_ENDPOINT}/v1/imageintegrations" \
@@ -130,16 +129,17 @@ for policy in "$PROJECT_DIR"/acs-policies/*.json; do
   import_policy "$policy" "$(cat "$policy")"
 done
 
-banner "Step 6: Grant pipeline service account permissions"
-oc adm policy add-role-to-user edit system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
-oc adm policy add-scc-to-user privileged system:serviceaccount:"$DEMO_NAMESPACE":pipeline 2>/dev/null || true
+banner "Step 5: Grant pipeline service account permissions"
+oc adm policy add-role-to-user edit system:serviceaccount:"$CI_NAMESPACE":pipeline -n "$CI_NAMESPACE" 2>/dev/null || true
+oc adm policy add-role-to-user edit system:serviceaccount:"$CI_NAMESPACE":pipeline -n "$DEMO_NAMESPACE" 2>/dev/null || true
+oc adm policy add-scc-to-user privileged system:serviceaccount:"$CI_NAMESPACE":pipeline 2>/dev/null || true
 
-banner "Step 7: Deploy in-cluster container registry"
+banner "Step 6: Deploy in-cluster container registry"
 oc apply -f "$PROJECT_DIR/manifests/base/registry/"
 echo "  Waiting for registry to be ready..."
 oc rollout status deployment/registry -n "$DEMO_NAMESPACE" --timeout=60s
 
-banner "Step 8: Deploy demo hub"
+banner "Step 7: Deploy demo hub"
 kustomize build "$PROJECT_DIR/manifests/overlays/dashboard" \
   | sed \
     -e "s|__TPA_CONSOLE_URL__|${TPA_CONSOLE_URL}|g" \

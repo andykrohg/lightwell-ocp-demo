@@ -1,4 +1,5 @@
 NAMESPACE ?= lightwell-demo
+CI_NAMESPACE ?= $(NAMESPACE)-ci
 IMAGE_REGISTRY ?= quay.io/andy_krohg
 
 .PHONY: help setup reset build-vulnerable build-remediated hub-build \
@@ -39,7 +40,7 @@ pipeline-vulnerable: ## Trigger the vulnerable build pipeline
 		-e "s|__TPA_CLIENT_SECRET__|$$TPA_CLIENT_SECRET|g" \
 		-e "s|__ROX_CENTRAL_ENDPOINT__|$$ROX_CENTRAL_ENDPOINT|g" \
 		-e "s|__ROX_API_TOKEN__|$$ROX_API_TOKEN|g" \
-		tekton/pipelinerun-vulnerable.yaml | oc create -n $(NAMESPACE) -f -
+		tekton/pipelinerun-vulnerable.yaml | oc create -n $$CI_NAMESPACE -f -
 
 pipeline-remediated: ## Trigger the remediated build pipeline
 	@source ./scripts/resolve-env.sh && \
@@ -51,7 +52,7 @@ pipeline-remediated: ## Trigger the remediated build pipeline
 		-e "s|__TPA_CLIENT_SECRET__|$$TPA_CLIENT_SECRET|g" \
 		-e "s|__ROX_CENTRAL_ENDPOINT__|$$ROX_CENTRAL_ENDPOINT|g" \
 		-e "s|__ROX_API_TOKEN__|$$ROX_API_TOKEN|g" \
-		tekton/pipelinerun-remediated.yaml | oc create -n $(NAMESPACE) -f -
+		tekton/pipelinerun-remediated.yaml | oc create -n $$CI_NAMESPACE -f -
 
 pipeline-enforce: ## Trigger vulnerable build with ACS enforcement (should fail)
 	@source ./scripts/resolve-env.sh && \
@@ -65,10 +66,11 @@ pipeline-enforce: ## Trigger vulnerable build with ACS enforcement (should fail)
 		-e "s|__ROX_API_TOKEN__|$$ROX_API_TOKEN|g" \
 		tekton/pipelinerun-vulnerable.yaml \
 	| sed '/name: SOFT_FAIL/{n;s/value: "true"/value: "false"/;}' \
-	| oc create -n $(NAMESPACE) -f -
+	| oc create -n $$CI_NAMESPACE -f -
 
 pipeline-logs: ## Follow the latest pipeline run logs
-	tkn pipelinerun logs -f --last -n $(NAMESPACE)
+	@source ./scripts/resolve-env.sh && \
+	tkn pipelinerun logs -f --last -n $$CI_NAMESPACE
 
 status: ## Show demo deployment status
 	@echo "=== Deployments ==="
@@ -78,4 +80,5 @@ status: ## Show demo deployment status
 	@oc get routes -n $(NAMESPACE) 2>/dev/null || echo "Namespace not found"
 	@echo ""
 	@echo "=== Pipeline Runs ==="
-	@tkn pipelinerun list -n $(NAMESPACE) 2>/dev/null || echo "No pipeline runs"
+	@source ./scripts/resolve-env.sh && \
+	tkn pipelinerun list -n $$CI_NAMESPACE 2>/dev/null || echo "No pipeline runs"

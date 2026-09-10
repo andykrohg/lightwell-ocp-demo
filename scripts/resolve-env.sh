@@ -14,6 +14,7 @@ if [ -f "$PROJECT_DIR/demo.env" ]; then
 fi
 
 export DEMO_NAMESPACE="${DEMO_NAMESPACE:-lightwell-demo}"
+export CI_NAMESPACE="${CI_NAMESPACE:-${DEMO_NAMESPACE}-ci}"
 export TPA_NAMESPACE="${TPA_NAMESPACE:-tpa-system}"
 
 if ! oc whoami &>/dev/null; then
