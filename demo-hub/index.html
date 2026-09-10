@@ -179,7 +179,7 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-problem);">2</div>
     <h3>Examine the Results</h3>
-    <p>The SBOM was uploaded to Trusted Profile Analyzer for tracking, and ACS flagged a policy violation for CVE-2022-40152. Since the policy is in <strong>inform</strong> mode, the app deployed despite the vulnerability.</p>
+    <p>The SBOM was uploaded to Trusted Profile Analyzer for tracking, and ACS flagged a policy violation for CVE-2022-40152. The pipeline runs ACS checks in <strong>soft-fail</strong> mode, so the app deployed despite the violation.</p>
     <div class="look-for">
       <strong>What to show</strong>
       In TPA, find the <em>catalog-app</em> SBOM tagged <em>vulnerable</em>. In ACS, filter violations by namespace <code>${DEMO_NAMESPACE}</code> and note the CVE-2022-40152 policy violation.
@@ -247,7 +247,7 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-enforce);">6</div>
     <h3>Enable ACS Enforcement</h3>
-    <p>Now that a clean alternative exists, switch ACS policy enforcement from <em>inform</em> to <em>enforce</em>. Builds with unresolved CVE policy violations are blocked from deploying.</p>
+    <p>Now that a clean alternative exists, re-run the vulnerable build with soft-fail disabled. The ACS image check blocks the pipeline when it finds unresolved CVE policy violations.</p>
     <div class="pipeline-box">make pipeline-enforce</div>
     <div class="look-for">
       <strong>What to show</strong>
@@ -261,7 +261,7 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-enforce);">7</div>
     <h3>The Full Supply Chain</h3>
-    <p>With VEX enforcement in the pipeline and automated VEX reconciliation between TPA and ACS, the supply chain is locked down:</p>
+    <p>With ACS enforcement in the pipeline and automated VEX reconciliation between TPA and ACS, the supply chain is locked down:</p>
     <ol style="font-size: 0.9rem; color: #4a4a4a; line-height: 1.8; padding-left: 1.25rem;">
       <li><strong>ACS policy enforcement</strong> &mdash; blocks builds with unresolved CVE violations</li>
       <li><strong>TPA</strong> &mdash; tracks every SBOM and advisory for full supply chain visibility</li>

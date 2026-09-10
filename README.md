@@ -151,8 +151,7 @@ make hub-build               Build demo hub container image
 **Lightwell Network** — The `remediated` Maven profile in `catalog-app/pom.xml`
 overrides `woodstox-core` to version `6.0.3.rhlw-00001` from the Lightwell
 public demo repository at `packages.redhat.com`. This is the same upstream
-version with a backported security patch (recursion depth limit), SLSA L3
-provenance, and Sigstore signatures. Lightwell also publishes VEX data
+version with a backported security patch (recursion depth limit). Lightwell also publishes VEX data
 declaring this package as `not_affected` for CVE-2022-40152. No credentials
 required.
 
