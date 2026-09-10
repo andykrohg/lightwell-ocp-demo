@@ -128,6 +128,35 @@
 
     .note { font-size: 0.8rem; color: #6a6e73; font-style: italic; }
 
+    /* Trigger buttons */
+    .trigger-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1.25rem;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter 0.15s;
+      margin: 0.75rem 0 0.25rem 0;
+    }
+    .trigger-btn:hover { filter: brightness(1.1); }
+    .trigger-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .trigger-btn.problem { background: var(--act-problem); }
+    .trigger-btn.solution { background: var(--act-solution); }
+    .trigger-btn.enforce { background: var(--act-enforce); }
+    .trigger-status {
+      display: inline-block;
+      margin-left: 0.75rem;
+      font-size: 0.85rem;
+      color: #6a6e73;
+    }
+    .trigger-status.ok { color: var(--act-enforce); }
+    .trigger-status.err { color: var(--act-problem); }
+
     /* Takeaways */
     .takeaways {
       background: white;
@@ -166,7 +195,8 @@
     <div class="step-num" style="background: var(--act-problem);">1</div>
     <h3>Build the Vulnerable App</h3>
     <p>A catalog microservice uses <strong>woodstox-core 6.0.3</strong> for XML parsing. This version contains <span class="badge badge-cve">CVE-2022-40152</span> &mdash; a denial-of-service vulnerability where a tiny crafted XML document triggers unbounded recursion in the DTD parser, crashing the service.</p>
-    <div class="pipeline-box">make pipeline-vulnerable</div>
+    <button class="trigger-btn problem" onclick="triggerPipeline('vulnerable','true',this)">&#9654; Build Vulnerable App</button>
+    <span class="trigger-status" id="status-vulnerable"></span>
     <div class="look-for">
       <strong>What to show</strong>
       Watch the pipeline run in OpenShift. The SBOM is uploaded to TPA and ACS scans the built image. CVE-2022-40152 is flagged by the ACS policy, but the pipeline deploys anyway in soft-fail mode.
@@ -218,7 +248,8 @@
       <span class="badge badge-green">6.0.3.rhlw-00001</span>
     </p>
     <p>The patch adds a recursion depth limit of 500 to the DTD parser, eliminating the DoS vector. Lightwell also publishes <strong>VEX</strong> data declaring this package as <em>not_affected</em> for CVE-2022-40152.</p>
-    <div class="pipeline-box">make pipeline-remediated</div>
+    <button class="trigger-btn solution" onclick="triggerPipeline('remediated','true',this)">&#9654; Build Remediated App</button>
+    <span class="trigger-status" id="status-remediated"></span>
     <div class="look-for">
       <strong>What to show</strong>
       The <em>vex-reconcile</em> step queries TPA for VEX resolutions and automatically creates an ACS false-positive exception for CVE-2022-40152. Approve it in ACS to clear the violation. The ACS scan now shows one fewer CVE on the remediated image.
@@ -251,7 +282,8 @@
     <div class="step-num" style="background: var(--act-enforce);">6</div>
     <h3>Enable ACS Enforcement</h3>
     <p>Now that a clean alternative exists, re-run the vulnerable build with soft-fail disabled. The ACS image check blocks the pipeline when it finds unresolved CVE policy violations.</p>
-    <div class="pipeline-box">make pipeline-enforce</div>
+    <button class="trigger-btn enforce" onclick="triggerPipeline('vulnerable','false',this)">&#9654; Build with Enforcement</button>
+    <span class="trigger-status" id="status-enforce"></span>
     <div class="look-for">
       <strong>What to show</strong>
       The vulnerable build is re-triggered with <code>SOFT_FAIL=false</code>. The ACS image check finds CVE-2022-40152 with no false-positive exception, so the pipeline <strong>fails the build</strong>. The remediated build would pass &mdash; vex-reconcile already created the exception.
@@ -293,6 +325,36 @@
   </div>
 
 </div><!-- /demo-content -->
+
+<script>
+const TRIGGER_URL = '/api/trigger';
+
+async function triggerPipeline(variant, softFail, btn) {
+  const key = softFail === 'false' ? 'enforce' : variant;
+  const statusEl = document.getElementById('status-' + key);
+  btn.disabled = true;
+  statusEl.textContent = 'Triggering...';
+  statusEl.className = 'trigger-status';
+  try {
+    const resp = await fetch(TRIGGER_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({variant: variant, softFail: softFail})
+    });
+    if (resp.ok) {
+      statusEl.textContent = 'Pipeline started';
+      statusEl.className = 'trigger-status ok';
+    } else {
+      statusEl.textContent = 'Error: HTTP ' + resp.status;
+      statusEl.className = 'trigger-status err';
+    }
+  } catch (e) {
+    statusEl.textContent = 'Connection failed';
+    statusEl.className = 'trigger-status err';
+  }
+  setTimeout(function() { btn.disabled = false; }, 3000);
+}
+</script>
 
 </body>
 </html>

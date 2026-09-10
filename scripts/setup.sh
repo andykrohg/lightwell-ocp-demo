@@ -65,6 +65,24 @@ oc apply -n "$CI_NAMESPACE" -f https://raw.githubusercontent.com/tektoncd/catalo
 echo "  Installing custom tasks..."
 oc apply -n "$CI_NAMESPACE" -f "$PROJECT_DIR/tekton/tasks/"
 oc apply -n "$CI_NAMESPACE" -f "$PROJECT_DIR/tekton/pipeline.yaml"
+echo "  Installing triggers..."
+sed \
+  -e "s|__DEMO_NAMESPACE__|${DEMO_NAMESPACE}|g" \
+  -e "s|__REGISTRY_HOST__|${REGISTRY_HOST}|g" \
+  -e "s|__TPA_URL__|${TPA_URL}|g" \
+  -e "s|__TPA_OIDC_ISSUER_URL__|${TPA_OIDC_ISSUER}|g" \
+  -e "s|__TPA_CLIENT_SECRET__|${TPA_CLIENT_SECRET}|g" \
+  -e "s|__ROX_CENTRAL_ENDPOINT__|${ROX_CENTRAL_ENDPOINT}|g" \
+  -e "s|__ROX_API_TOKEN__|${ROX_API_TOKEN}|g" \
+  "$PROJECT_DIR/tekton/triggers.yaml" | oc apply -n "$CI_NAMESPACE" -f -
+echo -n "  Waiting for EventListener to be ready... "
+sleep 3
+oc wait --for=condition=Ready eventlistener/demo-trigger -n "$CI_NAMESPACE" --timeout=30s 2>/dev/null || true
+EL_SVC="el-demo-trigger"
+if ! oc get route "$EL_SVC" -n "$CI_NAMESPACE" &>/dev/null; then
+  oc create route edge "$EL_SVC" --service="$EL_SVC" -n "$CI_NAMESPACE" 2>/dev/null || true
+fi
+echo -e "  ${GREEN}OK${NC}"
 
 banner "Step 4: Configure ACS integrations and policies"
 

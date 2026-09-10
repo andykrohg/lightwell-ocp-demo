@@ -12,4 +12,7 @@ envsubst '${TPA_CONSOLE_URL} ${ACS_CONSOLE_URL} ${OCP_CONSOLE_URL} ${DEMO_NAMESP
   < /opt/app-root/src/index.template.html \
   > /opt/app-root/src/index.html
 
+sed "s|__CI_NAMESPACE__|${CI_NAMESPACE}|g" /etc/nginx/nginx.conf > /tmp/nginx.conf
+cp /tmp/nginx.conf /etc/nginx/nginx.conf
+
 exec nginx -g 'daemon off;'

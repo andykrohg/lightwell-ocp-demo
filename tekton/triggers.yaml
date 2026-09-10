@@ -1,0 +1,108 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: catalog-pipeline-trigger
+  labels:
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  params:
+    - name: variant
+      description: Maven profile — vulnerable or remediated
+    - name: softFail
+      description: When true, ACS violations do not block the pipeline
+      default: "true"
+    - name: gitRepo
+      default: "https://github.com/andykrohg/lightwell-ocp-demo.git"
+    - name: gitRevision
+      default: main
+    - name: namespace
+      default: __DEMO_NAMESPACE__
+    - name: registryHost
+      default: __REGISTRY_HOST__
+    - name: tpaUrl
+      default: __TPA_URL__
+    - name: tpaOidcIssuerUrl
+      default: __TPA_OIDC_ISSUER_URL__
+    - name: tpaClientSecret
+      default: __TPA_CLIENT_SECRET__
+    - name: roxCentralEndpoint
+      default: __ROX_CENTRAL_ENDPOINT__
+    - name: roxApiToken
+      default: __ROX_API_TOKEN__
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: catalog-$(tt.params.variant)-
+        labels:
+          app.kubernetes.io/part-of: lightwell-demo
+          demo.lightwell/variant: $(tt.params.variant)
+      spec:
+        pipelineRef:
+          name: secure-catalog-pipeline
+        params:
+          - name: GIT_REPO
+            value: $(tt.params.gitRepo)
+          - name: GIT_REVISION
+            value: $(tt.params.gitRevision)
+          - name: MAVEN_PROFILE
+            value: $(tt.params.variant)
+          - name: IMAGE_NAME
+            value: $(tt.params.registryHost)/catalog-app
+          - name: IMAGE_TAG
+            value: $(tt.params.variant)-latest
+          - name: NAMESPACE
+            value: $(tt.params.namespace)
+          - name: TPA_URL
+            value: $(tt.params.tpaUrl)
+          - name: TPA_OIDC_ISSUER_URL
+            value: $(tt.params.tpaOidcIssuerUrl)
+          - name: TPA_CLIENT_ID
+            value: walker
+          - name: TPA_CLIENT_SECRET
+            value: $(tt.params.tpaClientSecret)
+          - name: ROX_CENTRAL_ENDPOINT
+            value: $(tt.params.roxCentralEndpoint)
+          - name: ROX_API_TOKEN
+            value: $(tt.params.roxApiToken)
+          - name: SOFT_FAIL
+            value: $(tt.params.softFail)
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 5Gi
+          - name: maven-settings
+            emptyDir: {}
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: catalog-pipeline-binding
+  labels:
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  params:
+    - name: variant
+      value: $(body.variant)
+    - name: softFail
+      value: $(body.softFail)
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: demo-trigger
+  labels:
+    app.kubernetes.io/part-of: lightwell-demo
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: run-pipeline
+      bindings:
+        - ref: catalog-pipeline-binding
+      template:
+        ref: catalog-pipeline-trigger

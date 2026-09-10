@@ -6,7 +6,8 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 USER 0
 RUN chmod +x /usr/local/bin/entrypoint.sh && \
-    chmod g+w /opt/app-root/src
+    chmod g+w /opt/app-root/src && \
+    chmod g+w "${NGINX_CONF_PATH}"
 USER 1001
 
 EXPOSE 8080
