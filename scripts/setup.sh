@@ -41,7 +41,8 @@ echo ""
 
 banner "Step 1: Create OpenShift projects"
 oc new-project "$DEMO_NAMESPACE" 2>/dev/null || oc project "$DEMO_NAMESPACE"
-oc new-project "$CI_NAMESPACE" 2>/dev/null || oc project "$CI_NAMESPACE"
+oc new-project "$CI_NAMESPACE" 2>/dev/null || true
+oc project "$DEMO_NAMESPACE"
 
 banner "Step 2: Create secrets"
 
@@ -135,7 +136,7 @@ oc adm policy add-role-to-user edit system:serviceaccount:"$CI_NAMESPACE":pipeli
 oc adm policy add-scc-to-user privileged system:serviceaccount:"$CI_NAMESPACE":pipeline 2>/dev/null || true
 
 banner "Step 6: Deploy in-cluster container registry"
-oc apply -f "$PROJECT_DIR/manifests/base/registry/"
+oc apply -n "$DEMO_NAMESPACE" -f "$PROJECT_DIR/manifests/base/registry/"
 echo "  Waiting for registry to be ready..."
 oc rollout status deployment/registry -n "$DEMO_NAMESPACE" --timeout=60s
 
