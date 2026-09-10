@@ -172,7 +172,7 @@
       Watch the pipeline run in OpenShift. The SBOM is uploaded to TPA and ACS scans the built image. CVE-2022-40152 is flagged by the ACS policy, but the pipeline deploys anyway in soft-fail mode.
     </div>
     <div class="step-links">
-      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
+      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${CI_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
     </div>
   </div>
 
@@ -224,7 +224,7 @@
       The <em>vex-reconcile</em> step queries TPA for VEX resolutions and automatically creates an ACS false-positive exception for CVE-2022-40152. Approve it in ACS to clear the violation. The ACS scan now shows one fewer CVE on the remediated image.
     </div>
     <div class="step-links">
-      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
+      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${CI_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
       <a href="${TPA_CONSOLE_URL}/sboms" target="_blank">TPA &mdash; SBOM Browser</a>
     </div>
   </div>
@@ -257,7 +257,7 @@
       The vulnerable build is re-triggered with <code>SOFT_FAIL=false</code>. The ACS image check finds CVE-2022-40152 with no false-positive exception, so the pipeline <strong>fails the build</strong>. The remediated build would pass &mdash; vex-reconcile already created the exception.
     </div>
     <div class="step-links">
-      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
+      <a href="${OCP_CONSOLE_URL}/pipelines/ns/${CI_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
     </div>
   </div>
 

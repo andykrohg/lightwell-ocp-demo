@@ -50,6 +50,11 @@ spec:
                 configMapKeyRef:
                   name: demo-hub-config
                   key: APPS_DOMAIN
+            - name: CI_NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-hub-config
+                  key: CI_NAMESPACE
           resources:
             requests:
               memory: "64Mi"
