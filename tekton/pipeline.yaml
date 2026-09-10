@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/part-of: lightwell-demo
 spec:
   description: >
-    Builds, signs, scans, and deploys the catalog-app. Parameterized to run
+    Builds, scans, and deploys the catalog-app. Parameterized to run
     with either the vulnerable (Maven Central) or remediated (Lightwell Network)
     dependency profile.
   params:
@@ -195,17 +195,7 @@ spec:
         - name: source
           workspace: shared-workspace
 
-    # 7. Sign container image
-    - name: cosign-sign
-      runAfter:
-        - buildah
-      taskRef:
-        name: cosign-sign-image
-      params:
-        - name: IMAGE
-          value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
-
-    # 8. ACS policy check
+    # 7. ACS policy check
     - name: acs-image-check
       runAfter:
         - buildah
@@ -222,7 +212,7 @@ spec:
         - name: SOFT_FAIL
           value: $(params.SOFT_FAIL)
 
-    # 9. ACS vulnerability scan
+    # 8. ACS vulnerability scan
     - name: acs-image-scan
       runAfter:
         - buildah
@@ -237,10 +227,9 @@ spec:
         - name: IMAGE
           value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
 
-    # 10. Deploy to OpenShift
+    # 9. Deploy to OpenShift
     - name: deploy
       runAfter:
-        - cosign-sign
         - acs-image-check
         - acs-image-scan
       taskSpec:

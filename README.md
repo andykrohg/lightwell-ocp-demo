@@ -33,16 +33,16 @@ attack vector.
 │  ┌──────┴─────────────────┴───────────────────────────────┐    │
 │  │              Tekton Pipeline                            │    │
 │  │  git-clone → maven-build ─┬─ vex-check                 │    │
-│  │                           ├─ upload-sbom               │    │
-│  │                           └─ buildah → cosign-sign ─┐  │    │
-│  │                                       acs-check ────┤→ deploy│
-│  │                                       acs-scan ─────┘  │    │
+│  │                           ├─ upload-sbom → vex-reconcile│    │
+│  │                           └─ buildah ─┐                │    │
+│  │                           acs-check ──┤→ deploy        │    │
+│  │                           acs-scan ───┘                │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  ┌────────────────────┐  ┌─────────────────────────────────┐   │
 │  │        ACS         │  │  Trusted Profile Analyzer (TPA) │   │
-│  │  Signature policy  │  │  SBOM & vulnerability tracking  │   │
-│  │  CVE monitoring    │  │  VEX advisory storage           │   │
+│  │  CVE monitoring    │  │  SBOM & vulnerability tracking  │   │
+│  │  VEX reconciliation│  │  VEX advisory storage           │   │
 │  └────────────────────┘  └─────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -120,8 +120,8 @@ lightwell-ocp-demo/
 ├── vex/                  VEX (Vulnerability Exploitability eXchange) data
 │   └── lightwell.openvex.json   OpenVEX for CVE-2022-40152
 ├── tekton/               Tekton CI pipeline
-│   ├── pipeline.yaml     git-clone → build → vex-check → sign → scan → deploy
-│   ├── tasks/            Custom tasks: vex-check, upload-sbom, acs-image-check/scan, cosign-sign
+│   ├── pipeline.yaml     git-clone → build → vex-check → scan → deploy
+│   ├── tasks/            Custom tasks: vex-check, upload-sbom, vex-reconcile, acs-image-check/scan
 │   └── pipelinerun-*.yaml  Pre-configured runs for each variant
 ├── acs-policies/         ACS policy definitions (imported during setup)
 ├── manifests/
@@ -171,15 +171,13 @@ by the `cyclonedx-maven-plugin`) to TPA after each build. TPA provides SBOM
 tracking and advisory visibility across both build variants.
 
 **Advanced Cluster Security** — A CVE watch policy (inform-only) flags
-CVE-2022-40152 across deployments. A signature verification policy ensures only
-cosign-signed images from the trusted pipeline can deploy. ACS provides runtime
-monitoring and risk scoring for both deployment variants.
+CVE-2022-40152 across deployments. The `vex-reconcile` task bridges TPA and ACS
+by creating false-positive exceptions for CVEs resolved by VEX data. ACS provides
+runtime monitoring and risk scoring for both deployment variants.
 
 ## Notes
 
 - Both pipelines use `--soft-fail` on ACS checks so they deploy despite
   violations — this lets you show both variants side by side.
-- The `cosign-sign` task requires Red Hat Trusted Artifact Signer (RHTAS). If
-  not configured, signing will fail but won't block the rest of the demo.
 - The demo hub page auto-templates console URLs at container startup via
   `envsubst` — configured in the Kustomize overlay ConfigMap.

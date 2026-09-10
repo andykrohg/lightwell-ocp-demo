@@ -22,6 +22,33 @@ oc delete -k "$PROJECT_DIR/manifests/overlays/vulnerable/" -n "$NAMESPACE" --ign
 echo -n "Removing remediated deployment... "
 oc delete -k "$PROJECT_DIR/manifests/overlays/remediated/" -n "$NAMESPACE" --ignore-not-found 2>/dev/null && echo -e "${GREEN}done${NC}" || echo -e "${YELLOW}skipped${NC}"
 
+# --- Clean up ACS false positive exceptions created by vex-reconcile ---
+if [ -f "$PROJECT_DIR/demo.env" ]; then
+  source "$PROJECT_DIR/demo.env"
+  ROX_CENTRAL_ENDPOINT="${ROX_CENTRAL_ENDPOINT:-$(oc get route -n rhacs-operator central -o jsonpath='{.spec.host}' 2>/dev/null):443}"
+  if [ -n "${ROX_API_TOKEN:-}" ] && [ -n "${ROX_CENTRAL_ENDPOINT:-}" ]; then
+    echo -n "Cleaning up ACS false positive exceptions... "
+    EXCEPTION_IDS=$(curl -sk "https://$ROX_CENTRAL_ENDPOINT/v2/vulnerability-exceptions" \
+      -H "Authorization: Bearer $ROX_API_TOKEN" 2>/dev/null \
+      | python3 -c "
+import sys, json
+d = json.loads(sys.stdin.read())
+for ex in d.get('exceptions', []):
+    print(ex['id'])
+" 2>/dev/null)
+    DELETED=0
+    for EID in $EXCEPTION_IDS; do
+      curl -sk -X DELETE "https://$ROX_CENTRAL_ENDPOINT/v2/vulnerability-exceptions/$EID" \
+        -H "Authorization: Bearer $ROX_API_TOKEN" >/dev/null 2>&1 && DELETED=$((DELETED + 1))
+    done
+    if [ "$DELETED" -gt 0 ]; then
+      echo -e "${GREEN}removed $DELETED${NC}"
+    else
+      echo -e "${YELLOW}none found${NC}"
+    fi
+  fi
+fi
+
 echo ""
 echo -e "${GREEN}Demo reset complete.${NC}"
 echo ""

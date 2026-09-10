@@ -54,14 +54,6 @@ oc create secret generic tpa-credentials \
   --from-literal=oidc-issuer="${TPA_OIDC_ISSUER}" \
   --dry-run=client -o yaml | oc apply -f -
 
-if ! oc get secret cosign-signing-key -n "$DEMO_NAMESPACE" &>/dev/null; then
-  echo "  Generating cosign key pair..."
-  COSIGN_PASSWORD="" cosign generate-key-pair k8s://"$DEMO_NAMESPACE"/cosign-signing-key 2>/dev/null
-  echo -e "  ${GREEN}Cosign key pair created${NC}"
-else
-  echo -e "  Cosign signing key ${YELLOW}already exists${NC}"
-fi
-
 banner "Step 3: Create pipeline workspace PVC"
 oc apply -f "$PROJECT_DIR/tekton/workspace-pvc.yaml"
 
@@ -96,30 +88,6 @@ elif [ "$REG_RESPONSE" = "409" ]; then
   echo -e "${YELLOW}already exists${NC}"
 else
   echo -e "${YELLOW}HTTP $REG_RESPONSE (may already exist)${NC}"
-fi
-
-echo -n "  Creating cosign signature integration... "
-COSIGN_PUB=$(oc get secret cosign-signing-key -n "$DEMO_NAMESPACE" -o jsonpath='{.data.cosign\.pub}' 2>/dev/null | base64 -d)
-SIG_RESPONSE=$(COSIGN_PUB="$COSIGN_PUB" python3 -c "
-import json, os
-pub = os.environ['COSIGN_PUB']
-print(json.dumps({'name':'Lightwell Demo Cosign','cosign':{'publicKeys':[{'name':'demo-signing-key','publicKeyPemEnc':pub}]}}))
-" | curl -sk -X POST "https://${ROX_CENTRAL_ENDPOINT}/v1/signatureintegrations" \
-  -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d @- 2>/dev/null)
-SIG_ID=$(echo "$SIG_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null) || true
-if [ -n "$SIG_ID" ]; then
-  echo -e "${GREEN}OK${NC} ($SIG_ID)"
-else
-  SIG_ID=$(curl -sk "https://${ROX_CENTRAL_ENDPOINT}/v1/signatureintegrations" \
-    -H "Authorization: Bearer ${ROX_API_TOKEN}" 2>/dev/null \
-    | python3 -c "import sys,json; [print(i['id']) for i in json.load(sys.stdin).get('integrations',[]) if i['name']=='Lightwell Demo Cosign']" 2>/dev/null) || true
-  if [ -n "$SIG_ID" ]; then
-    echo -e "${YELLOW}already exists${NC} ($SIG_ID)"
-  else
-    echo -e "${YELLOW}failed — signature policy will not work${NC}"
-  fi
 fi
 
 echo "  Importing policies (delete + recreate for idempotency)..."
@@ -159,13 +127,7 @@ for p in data.get('policies', []):
 }
 
 for policy in "$PROJECT_DIR"/acs-policies/*.json; do
-  if [ "$(basename "$policy")" = "require-signature.json" ] && [ -n "$SIG_ID" ]; then
-    POLICY_JSON=$(jq --arg sig_id "$SIG_ID" \
-      '.policySections[0].policyGroups[0].values[0].value = $sig_id' "$policy")
-    import_policy "$policy" "$POLICY_JSON"
-  else
-    import_policy "$policy" "$(cat "$policy")"
-  fi
+  import_policy "$policy" "$(cat "$policy")"
 done
 
 banner "Step 6: Grant pipeline service account permissions"

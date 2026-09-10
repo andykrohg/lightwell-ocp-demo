@@ -59,17 +59,28 @@ spec:
           exit 1
         fi
 
-        # --- Extract PURLs from CycloneDX SBOM ---
-        echo "=== Extracting PURLs from SBOM ==="
+        # --- Extract PURLs and describing CPEs from CycloneDX SBOM ---
+        echo "=== Extracting PURLs and CPEs from SBOM ==="
         PURLS=$(python3 -c "
-        import json, sys
+        import json
         with open('$SBOM_FILE') as f:
             bom = json.load(f)
         purls = [c['purl'] for c in bom.get('components', []) if 'purl' in c]
         print(json.dumps(purls))
         ")
+        SBOM_CPES=$(python3 -c "
+        import json
+        with open('$SBOM_FILE') as f:
+            bom = json.load(f)
+        cpes = []
+        meta = bom.get('metadata', {}).get('component', {})
+        if meta.get('cpe'):
+            cpes.append(meta['cpe'])
+        print(json.dumps(cpes))
+        ")
         PURL_COUNT=$(echo "$PURLS" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
-        echo "Found $PURL_COUNT PURLs"
+        CPE_COUNT=$(echo "$SBOM_CPES" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+        echo "Found $PURL_COUNT PURLs, $CPE_COUNT describing CPEs"
 
         if [ "$PURL_COUNT" -eq 0 ]; then
           echo "No PURLs found in SBOM — nothing to reconcile."
@@ -113,6 +124,19 @@ spec:
         import json, sys
 
         data = json.load(sys.stdin)
+        sbom_cpes = $SBOM_CPES
+
+        # Trust a resolving VEX entry only when:
+        #  - context is null (explicitly unscoped advisory), OR
+        #  - context CPE matches one of the SBOM's describing CPEs
+        # Product-scoped entries for unrelated products (JBoss, Satellite,
+        # etc.) are ignored to avoid false positives.
+        def trusted(ps):
+            ctx = ps.get('context')
+            if ctx is None:
+                return True
+            cpe = ctx.get('cpe', '') if isinstance(ctx, dict) else ''
+            return any(cpe.startswith(sc) for sc in sbom_cpes) if sbom_cpes else False
 
         resolved = {}
         for purl, result in data.items():
@@ -120,13 +144,12 @@ spec:
             resolved_cves = {}
             for detail in result.get('details', []):
                 for ps in detail.get('purl_statuses', []):
-                    status = ps.get('purl_status', {})
-                    vuln = status.get('vulnerability', {})
+                    vuln = ps.get('vulnerability', {})
                     cve = vuln.get('identifier', '')
-                    s = status.get('status', '')
+                    s = ps.get('status', '')
                     if s == 'affected':
                         affected_cves.add(cve)
-                    elif s in ('not_affected', 'known_not_affected', 'fixed'):
+                    elif s in ('not_affected', 'known_not_affected', 'fixed') and trusted(ps):
                         resolved_cves[cve] = s
             for cve, vex_status in resolved_cves.items():
                 if cve in affected_cves and cve not in resolved:
