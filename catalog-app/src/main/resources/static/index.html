@@ -178,41 +178,34 @@ async function runExploit() {
   result.style.display = 'none';
 
   const payload = buildPayload();
-  const CONCURRENT = 20;
-
-  const send = () => fetch('/api/products/import', {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: payload
-  });
 
   try {
-    const responses = await Promise.allSettled(
-      Array.from({ length: CONCURRENT }, send)
-    );
-    const fulfilled = responses.filter(r => r.status === 'fulfilled');
-    const failed = responses.filter(r => r.status === 'rejected');
-    const serverErrors = fulfilled.filter(r => r.value.status >= 500);
-
-    if (failed.length > 0 || serverErrors.length > 0) {
+    const resp = await fetch('/api/products/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload
+    });
+    const body = await resp.json().catch(() => ({}));
+    if (resp.status >= 500) {
       result.className = 'attack-result error';
-      result.innerHTML = 'Service crashed or errored.<br>' +
-        failed.length + ' of ' + CONCURRENT + ' requests failed (connection lost).<br>' +
-        serverErrors.length + ' returned HTTP 500 (StackOverflowError).';
+      result.innerHTML = 'HTTP ' + resp.status + ' — ' +
+        (body.message || 'Server error');
     } else {
-      const body = await fulfilled[0].value.json().catch(() => ({}));
       result.className = 'attack-result success';
-      result.innerHTML = 'Payload rejected safely.<br>' +
-        'All ' + CONCURRENT + ' requests handled cleanly.' +
-        (body.message ? '<br>' + body.message : '');
+      result.innerHTML = 'Payload rejected safely. ' +
+        (body.message || 'No crash.');
     }
+    btn.disabled = false;
+    btn.textContent = 'Send Exploit Payload';
   } catch (e) {
     result.className = 'attack-result error';
-    result.innerHTML = 'Service unreachable — application crashed.';
+    result.innerHTML =
+      'Connection lost — the application crashed.<br>' +
+      'The malicious XML payload caused a StackOverflowError that ' +
+      'terminated the JVM. Kubernetes will restart the pod shortly.';
+    btn.disabled = false;
+    btn.textContent = 'Send Exploit Payload';
   }
-
-  btn.disabled = false;
-  btn.textContent = 'Send Exploit Payload';
 }
 </script>
 </body>

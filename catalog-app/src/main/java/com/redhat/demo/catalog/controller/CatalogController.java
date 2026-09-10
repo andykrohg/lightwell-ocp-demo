@@ -107,6 +107,10 @@ public class CatalogController {
             result.put("status", "success");
             result.put("imported", count);
             return ResponseEntity.ok(result);
+        } catch (StackOverflowError e) {
+            System.err.println("FATAL: StackOverflowError in XML parser — JVM state compromised, terminating.");
+            Runtime.getRuntime().halt(1);
+            return null;
         } catch (Exception e) {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("status", "error");

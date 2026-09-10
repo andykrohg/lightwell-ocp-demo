@@ -196,7 +196,7 @@
     <p>The scanners say it&rsquo;s vulnerable &mdash; let&rsquo;s prove it. The catalog app has a built-in &ldquo;Simulate Attack&rdquo; button that fires a crafted XML payload at its own XML import endpoint.</p>
     <div class="look-for">
       <strong>What to show</strong>
-      Open the vulnerable catalog app and click <strong>Send Exploit Payload</strong>. The button fires 20 concurrent malicious XML requests, crashing the service with StackOverflowErrors. The page itself goes unresponsive &mdash; the pod is dead.
+      Open the vulnerable catalog app and click <strong>Send Exploit Payload</strong>. A single malicious XML request triggers a StackOverflowError that crashes the JVM. The page goes dead &mdash; Kubernetes will restart the pod, but the damage is done.
     </div>
     <div class="step-links">
       <a href="http://vulnerable-catalog-app-${DEMO_NAMESPACE}.${APPS_DOMAIN}" target="_blank">Vulnerable Catalog App</a>
