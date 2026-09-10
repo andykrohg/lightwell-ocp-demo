@@ -130,7 +130,7 @@ spec:
     # 4. VEX reconciliation — create ACS false positive exceptions for VEX-resolved CVEs
     - name: vex-reconcile
       runAfter:
-        - upload-sbom
+        - maven-build
       taskRef:
         name: vex-reconcile
       params:
@@ -158,6 +158,7 @@ spec:
     - name: buildah
       runAfter:
         - upload-sbom
+        - vex-reconcile
       taskRef:
         name: buildah
       params:
