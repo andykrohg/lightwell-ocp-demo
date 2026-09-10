@@ -193,13 +193,14 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-problem);">3</div>
     <h3>Prove It: Live Exploit</h3>
-    <p>The scanners say it&rsquo;s vulnerable &mdash; let&rsquo;s prove it. A tiny XML payload (&lt;1 KB) with deeply nested DTD declarations exploits unbounded recursion in the Woodstox parser, crashing the service.</p>
-    <div class="pipeline-box">./scripts/exploit-demo.sh http://&lt;vulnerable-route&gt;</div>
+    <p>The scanners say it&rsquo;s vulnerable &mdash; let&rsquo;s prove it. The catalog app has a built-in &ldquo;Simulate Attack&rdquo; button that fires a crafted XML payload at its own XML import endpoint.</p>
     <div class="look-for">
       <strong>What to show</strong>
-      The vulnerable app returns HTTP 500 (StackOverflowError) or crashes entirely. A single request &mdash; under 1 KB &mdash; takes the service down. This is the real-world impact of leaving CVE-2022-40152 unpatched.
+      Open the vulnerable catalog app and click <strong>Send Exploit Payload</strong>. The button fires 20 concurrent malicious XML requests, crashing the service with StackOverflowErrors. The page itself goes unresponsive &mdash; the pod is dead.
     </div>
-    <p class="note">Run from a terminal with access to the cluster routes.</p>
+    <div class="step-links">
+      <a href="http://vulnerable-catalog-app-${DEMO_NAMESPACE}.${APPS_DOMAIN}" target="_blank">Vulnerable Catalog App</a>
+    </div>
   </div>
 
   <!-- ── ACT 2: THE SOLUTION ── -->
@@ -231,13 +232,15 @@
   <div class="step">
     <div class="step-num" style="background: var(--act-solution);">5</div>
     <h3>Same Exploit, Different Outcome</h3>
-    <p>Re-run the same exploit against both apps side by side. Same version, same API &mdash; only the dependency source changed.</p>
-    <div class="pipeline-box">./scripts/exploit-demo.sh http://&lt;vulnerable-route&gt; http://&lt;remediated-route&gt;</div>
+    <p>Open the remediated catalog app and click the same &ldquo;Send Exploit Payload&rdquo; button. Same version, same API &mdash; only the dependency source changed.</p>
     <div class="look-for">
       <strong>What to show</strong>
-      The vulnerable app crashes again. The remediated app rejects the payload cleanly at the depth limit &mdash; no stack overflow, no downtime. The Lightwell patch is functionally verified.
+      All 20 requests are handled cleanly &mdash; the Lightwell-patched Woodstox rejects the payload at a depth limit of 500. No crash, no downtime. Compare with the vulnerable app which is still down (or restarting).
     </div>
-    <p class="note">Run from a terminal with access to the cluster routes.</p>
+    <div class="step-links">
+      <a href="http://remediated-catalog-app-${DEMO_NAMESPACE}.${APPS_DOMAIN}" target="_blank">Remediated Catalog App</a>
+      <a href="http://vulnerable-catalog-app-${DEMO_NAMESPACE}.${APPS_DOMAIN}" target="_blank">Vulnerable Catalog App</a>
+    </div>
   </div>
 
   <!-- ── ACT 3: ENFORCE ── -->

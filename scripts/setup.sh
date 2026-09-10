@@ -146,6 +146,7 @@ kustomize build "$PROJECT_DIR/manifests/overlays/dashboard" \
     -e "s|__ACS_CONSOLE_URL__|${ACS_CONSOLE_URL}|g" \
     -e "s|__OCP_CONSOLE_URL__|${OCP_CONSOLE_URL}|g" \
     -e "s|__DEMO_NAMESPACE__|${DEMO_NAMESPACE}|g" \
+    -e "s|__APPS_DOMAIN__|${APPS_DOMAIN}|g" \
   | oc apply -n "$DEMO_NAMESPACE" -f -
 
 banner "Setup Complete"

