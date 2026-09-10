@@ -34,15 +34,16 @@ if [ -f "$PROJECT_DIR/demo.env" ]; then
 import sys, json
 d = json.loads(sys.stdin.read())
 for ex in d.get('exceptions', []):
-    print(ex['id'])
+    if not ex.get('expired', False):
+        print(ex['id'])
 " 2>/dev/null)
-    DELETED=0
+    CANCELLED=0
     for EID in $EXCEPTION_IDS; do
-      curl -sk -X DELETE "https://$ROX_CENTRAL_ENDPOINT/v2/vulnerability-exceptions/$EID" \
-        -H "Authorization: Bearer $ROX_API_TOKEN" >/dev/null 2>&1 && DELETED=$((DELETED + 1))
+      curl -sk -X POST "https://$ROX_CENTRAL_ENDPOINT/v2/vulnerability-exceptions/$EID/cancel" \
+        -H "Authorization: Bearer $ROX_API_TOKEN" >/dev/null 2>&1 && CANCELLED=$((CANCELLED + 1))
     done
-    if [ "$DELETED" -gt 0 ]; then
-      echo -e "${GREEN}removed $DELETED${NC}"
+    if [ "$CANCELLED" -gt 0 ]; then
+      echo -e "${GREEN}cancelled $CANCELLED${NC}"
     else
       echo -e "${YELLOW}none found${NC}"
     fi

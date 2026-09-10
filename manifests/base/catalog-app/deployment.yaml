@@ -21,6 +21,7 @@ spec:
       containers:
         - name: catalog-app
           image: IMAGE_PLACEHOLDER
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               protocol: TCP
