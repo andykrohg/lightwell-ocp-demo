@@ -116,8 +116,6 @@ lightwell-ocp-demo/
 ├── demo-hub/             Static landing page with links to native UIs
 │   ├── index.html        Narrative + deep links to TPA/ACS/OCP
 │   └── Containerfile     UBI9 nginx, URLs injected via envsubst
-├── vex/                  VEX reference data (consumed by TPA, not pipeline)
-│   └── lightwell.openvex.json   OpenVEX for CVE-2022-40152
 ├── tekton/               Tekton CI pipeline
 │   ├── pipeline.yaml     git-clone → build → upload-sbom → scan → deploy
 │   ├── tasks/            Custom tasks: upload-sbom, vex-reconcile, acs-image-check/scan
