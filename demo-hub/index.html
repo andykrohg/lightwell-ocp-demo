@@ -169,7 +169,7 @@
     <div class="pipeline-box">make pipeline-vulnerable</div>
     <div class="look-for">
       <strong>What to show</strong>
-      Watch the pipeline run in OpenShift. In the <em>vex-check</em> step logs, note that CVE-2022-40152 appears in the vulnerability list. No VEX data applies to the standard Maven Central version, so the CVE remains unresolved.
+      Watch the pipeline run in OpenShift. The SBOM is uploaded to TPA and ACS scans the built image. CVE-2022-40152 is flagged by the ACS policy, but the pipeline deploys anyway in soft-fail mode.
     </div>
     <div class="step-links">
       <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
@@ -220,7 +220,7 @@
     <div class="pipeline-box">make pipeline-remediated</div>
     <div class="look-for">
       <strong>What to show</strong>
-      In the <em>vex-check</em> step logs, compare the summary: <em>Suppressed by VEX: 1</em>. CVE-2022-40152 is confirmed as patched and removed from the findings. The <em>vex-reconcile</em> step also creates an ACS false-positive exception for CVE-2022-40152 &mdash; approve it in ACS to clear the violation.
+      The <em>vex-reconcile</em> step queries TPA for VEX resolutions and automatically creates an ACS false-positive exception for CVE-2022-40152. Approve it in ACS to clear the violation. The ACS scan now shows one fewer CVE on the remediated image.
     </div>
     <div class="step-links">
       <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
@@ -246,12 +246,12 @@
 
   <div class="step">
     <div class="step-num" style="background: var(--act-enforce);">6</div>
-    <h3>Enable VEX Enforcement</h3>
-    <p>Now that a clean alternative exists, require VEX remediation data before builds proceed. Builds shipping unvetted dependencies &mdash; with zero VEX suppressions &mdash; are blocked.</p>
+    <h3>Enable ACS Enforcement</h3>
+    <p>Now that a clean alternative exists, switch ACS policy enforcement from <em>inform</em> to <em>enforce</em>. Builds with unresolved CVE policy violations are blocked from deploying.</p>
     <div class="pipeline-box">make pipeline-enforce</div>
     <div class="look-for">
       <strong>What to show</strong>
-      The vulnerable build is re-triggered with <code>REQUIRE_VEX=true</code>. Since the standard woodstox-core doesn't match any VEX statements, zero CVEs are suppressed and the vex-check step <strong>fails the build</strong>.
+      The vulnerable build is re-triggered with <code>SOFT_FAIL=false</code>. The ACS image check finds CVE-2022-40152 with no false-positive exception, so the pipeline <strong>fails the build</strong>. The remediated build would pass &mdash; vex-reconcile already created the exception.
     </div>
     <div class="step-links">
       <a href="${OCP_CONSOLE_URL}/pipelines/ns/${DEMO_NAMESPACE}" target="_blank">OpenShift &mdash; Pipeline Runs</a>
@@ -263,7 +263,7 @@
     <h3>The Full Supply Chain</h3>
     <p>With VEX enforcement in the pipeline and automated VEX reconciliation between TPA and ACS, the supply chain is locked down:</p>
     <ol style="font-size: 0.9rem; color: #4a4a4a; line-height: 1.8; padding-left: 1.25rem;">
-      <li><strong>Pipeline vex-check</strong> &mdash; blocks builds without verified remediation data</li>
+      <li><strong>ACS policy enforcement</strong> &mdash; blocks builds with unresolved CVE violations</li>
       <li><strong>TPA</strong> &mdash; tracks every SBOM and advisory for full supply chain visibility</li>
       <li><strong>VEX reconciliation</strong> &mdash; automatically creates ACS exceptions for CVEs resolved by vendor VEX data</li>
       <li><strong>ACS</strong> &mdash; monitors CVEs across deployments with policy-driven alerting</li>

@@ -53,7 +53,7 @@ pipeline-remediated: ## Trigger the remediated build pipeline
 		-e "s|__ROX_API_TOKEN__|$$ROX_API_TOKEN|g" \
 		tekton/pipelinerun-remediated.yaml | oc create -n $(NAMESPACE) -f -
 
-pipeline-enforce: ## Trigger vulnerable build with VEX enforcement (should fail)
+pipeline-enforce: ## Trigger vulnerable build with ACS enforcement (should fail)
 	@source ./scripts/resolve-env.sh && \
 	sed \
 		-e "s|__DEMO_NAMESPACE__|$$DEMO_NAMESPACE|g" \
@@ -64,7 +64,7 @@ pipeline-enforce: ## Trigger vulnerable build with VEX enforcement (should fail)
 		-e "s|__ROX_CENTRAL_ENDPOINT__|$$ROX_CENTRAL_ENDPOINT|g" \
 		-e "s|__ROX_API_TOKEN__|$$ROX_API_TOKEN|g" \
 		tekton/pipelinerun-vulnerable.yaml \
-	| awk '/name: SOFT_FAIL/{print; getline; print; print "    - name: REQUIRE_VEX"; print "      value: \"true\""; next}1' \
+	| sed '/name: SOFT_FAIL/{n;s/value: "true"/value: "false"/;}' \
 	| oc create -n $(NAMESPACE) -f -
 
 pipeline-logs: ## Follow the latest pipeline run logs
