@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.core.io.ClassPathResource;
 
-import org.json.JSONObject;
-
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
@@ -42,14 +40,6 @@ public class CatalogController {
     @Value("${app.dep-versions.woodstox-core:unknown}")
     private String woodstoxVersion;
 
-    @Value("${app.dep-versions.json-path:unknown}")
-    private String jsonPathVersion;
-
-    @Value("${app.dep-versions.json:unknown}")
-    private String orgJsonVersion;
-
-    @Value("${app.dep-versions.spring-core:unknown}")
-    private String springCoreVersion;
 
     public CatalogController(CatalogService catalogService) {
         this.catalogService = catalogService;
@@ -82,9 +72,6 @@ public class CatalogController {
 
         Map<String, String> dependencies = new LinkedHashMap<>();
         dependencies.put("woodstox-core", woodstoxVersion);
-        dependencies.put("json-path", jsonPathVersion);
-        dependencies.put("json", orgJsonVersion);
-        dependencies.put("spring-core", springCoreVersion);
         info.put("dependencies", dependencies);
 
         return info;

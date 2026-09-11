@@ -112,7 +112,7 @@ lightwell-ocp-demo/
 ├── catalog-app/          Spring Boot product catalog (dual Maven profiles)
 │   ├── pom.xml           vulnerable (default) + remediated profiles
 │   ├── Containerfile     Multi-stage build for local dev
-│   └── src/              REST API: /api/products, /api/health, /api/dependencies
+│   └── src/              REST API: /api/products, /api/health, /api/products/import
 ├── demo-hub/             Static landing page with links to native UIs
 │   ├── index.html        Narrative + deep links to TPA/ACS/OCP
 │   └── Containerfile     UBI9 nginx, URLs injected via envsubst
@@ -124,7 +124,7 @@ lightwell-ocp-demo/
 ├── manifests/
 │   ├── base/             Kustomize base (catalog-app, dashboard)
 │   ├── overlays/         Per-variant overlays (vulnerable, remediated, dashboard)
-│   └── tpa/              TPA prerequisites + CR (used by install-tpa.sh)
+│   └── tpa/              TPA prerequisites, CR, curated advisories, and seed SQL
 ├── scripts/              setup.sh, reset.sh, exploit-demo.sh
 ├── demo.env.example      Environment config template (only ROX_API_TOKEN required)
 └── Makefile              Build and deploy targets
