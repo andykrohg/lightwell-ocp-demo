@@ -1,0 +1,79 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "vendor",
+      "name": "Lightwell Network",
+      "namespace": "https://lightwell.io"
+    },
+    "title": "Lightwell VEX for CVE-2022-40152",
+    "tracking": {
+      "current_release_date": "2026-01-15T00:00:00Z",
+      "id": "LW-VEX-2026-001",
+      "initial_release_date": "2026-01-15T00:00:00Z",
+      "revision_history": [
+        {
+          "date": "2026-01-15T00:00:00Z",
+          "number": "1",
+          "summary": "Initial release"
+        }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2022-40152",
+      "notes": [
+        {
+          "category": "summary",
+          "text": "Denial of service via DTD recursion in Woodstox XML parser. Fixed in Lightwell-patched build 6.0.3.rhlw-00001 by adding a recursion depth limit of 500."
+        }
+      ],
+      "product_status": {
+        "known_not_affected": ["CSAFPID-lightwell-woodstox-patched"],
+        "known_affected": ["CSAFPID-woodstox-vulnerable"]
+      }
+    }
+  ],
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "Lightwell Network",
+        "branches": [
+          {
+            "category": "product_version",
+            "name": "woodstox-core-6.0.3.rhlw-00001",
+            "product": {
+              "product_id": "CSAFPID-lightwell-woodstox-patched",
+              "name": "Lightwell woodstox-core 6.0.3.rhlw-00001",
+              "product_identification_helper": {
+                "purl": "pkg:maven/com.fasterxml.woodstox/woodstox-core@6.0.3.rhlw-00001"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "category": "vendor",
+        "name": "FasterXML",
+        "branches": [
+          {
+            "category": "product_version",
+            "name": "woodstox-core-6.0.3",
+            "product": {
+              "product_id": "CSAFPID-woodstox-vulnerable",
+              "name": "FasterXML woodstox-core 6.0.3",
+              "product_identification_helper": {
+                "purl": "pkg:maven/com.fasterxml.woodstox/woodstox-core@6.0.3"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
