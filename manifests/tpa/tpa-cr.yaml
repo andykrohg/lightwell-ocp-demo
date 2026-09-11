@@ -80,16 +80,8 @@ spec:
       workingDirectory:
         size: 10Gi
     createImporters:
-      enabled: true
+      enabled: false
       image: {}
-      importers:
-        redhat-csaf:
-          csaf:
-            period: 24h
-            source: https://access.redhat.com/security/data/csaf/v2/provider-metadata.json
-            v3Signatures: true
-            onlyPrefixes:
-              - cve-2022-40
   openshift:
     useServiceCa: true
   ingress: {}
