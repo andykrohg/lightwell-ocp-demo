@@ -65,21 +65,6 @@ spec:
       rust: {}
       tracing: {}
     importer:
-      enabled: true
-      image: {}
-      infrastructure: {}
-      metrics: {}
-      replicas: 1
-      concurrency: 1
-      resources:
-        requests:
-          cpu: 500m
-          memory: 2Gi
-      rust: {}
-      tracing: {}
-      workingDirectory:
-        size: 10Gi
-    createImporters:
       enabled: false
       image: {}
   openshift:

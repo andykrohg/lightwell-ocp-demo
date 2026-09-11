@@ -1,0 +1,99 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "coordinator",
+      "name": "Lightwell Demo Advisory Feed",
+      "namespace": "https://lightwell.io"
+    },
+    "title": "SnakeYAML vulnerabilities affecting catalog-app",
+    "tracking": {
+      "current_release_date": "2026-01-15T00:00:00Z",
+      "id": "LW-ADV-2026-SNAKEYAML",
+      "initial_release_date": "2026-01-15T00:00:00Z",
+      "revision_history": [
+        { "date": "2026-01-15T00:00:00Z", "number": "1", "summary": "Initial release" }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2022-1471",
+      "title": "SnakeYAML unsafe deserialization RCE",
+      "discovery_date": "2022-12-01T00:00:00Z",
+      "release_date": "2022-12-01T00:00:00Z",
+      "notes": [{ "category": "description", "text": "SnakeYAML Constructor class allows unsafe deserialization of Java objects, enabling remote code execution via crafted YAML input." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", "baseScore": 9.8, "baseSeverity": "CRITICAL" }, "products": ["CSAFPID-snakeyaml-130"] }],
+      "product_status": { "known_affected": ["CSAFPID-snakeyaml-130"] }
+    },
+    {
+      "cve": "CVE-2022-25857",
+      "title": "SnakeYAML stack overflow DoS",
+      "discovery_date": "2022-08-30T00:00:00Z",
+      "release_date": "2022-08-30T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Denial of service via stack overflow when processing deeply nested YAML documents in SnakeYAML." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H", "baseScore": 7.5, "baseSeverity": "HIGH" }, "products": ["CSAFPID-snakeyaml-130"] }],
+      "product_status": { "known_affected": ["CSAFPID-snakeyaml-130"] }
+    },
+    {
+      "cve": "CVE-2022-38749",
+      "title": "SnakeYAML deep nesting DoS",
+      "discovery_date": "2022-09-05T00:00:00Z",
+      "release_date": "2022-09-05T00:00:00Z",
+      "notes": [{ "category": "description", "text": "SnakeYAML is susceptible to denial of service via stack overflow when parsing crafted YAML input with deep nesting." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H", "baseScore": 6.5, "baseSeverity": "MEDIUM" }, "products": ["CSAFPID-snakeyaml-130"] }],
+      "product_status": { "known_affected": ["CSAFPID-snakeyaml-130"] }
+    },
+    {
+      "cve": "CVE-2022-38750",
+      "title": "SnakeYAML unchecked recursion DoS",
+      "discovery_date": "2022-09-05T00:00:00Z",
+      "release_date": "2022-09-05T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Denial of service via unchecked recursion depth in SnakeYAML parser." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H", "baseScore": 5.5, "baseSeverity": "MEDIUM" }, "products": ["CSAFPID-snakeyaml-130"] }],
+      "product_status": { "known_affected": ["CSAFPID-snakeyaml-130"] }
+    },
+    {
+      "cve": "CVE-2022-38751",
+      "title": "SnakeYAML recursive parsing DoS",
+      "discovery_date": "2022-09-05T00:00:00Z",
+      "release_date": "2022-09-05T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Denial of service from crafted YAML input causing deep recursion in SnakeYAML." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H", "baseScore": 6.5, "baseSeverity": "MEDIUM" }, "products": ["CSAFPID-snakeyaml-130"] }],
+      "product_status": { "known_affected": ["CSAFPID-snakeyaml-130"] }
+    },
+    {
+      "cve": "CVE-2022-38752",
+      "title": "SnakeYAML out-of-bounds write DoS",
+      "discovery_date": "2022-09-05T00:00:00Z",
+      "release_date": "2022-09-05T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Out-of-bounds write from deeply nested YAML input in SnakeYAML leading to denial of service." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H", "baseScore": 6.5, "baseSeverity": "MEDIUM" }, "products": ["CSAFPID-snakeyaml-130"] }],
+      "product_status": { "known_affected": ["CSAFPID-snakeyaml-130"] }
+    }
+  ],
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "SnakeYAML",
+        "branches": [
+          {
+            "category": "product_version",
+            "name": "snakeyaml-1.30",
+            "product": {
+              "product_id": "CSAFPID-snakeyaml-130",
+              "name": "SnakeYAML 1.30",
+              "product_identification_helper": {
+                "purl": "pkg:maven/org.yaml/snakeyaml@1.30"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "vendor",
+      "name": "FasterXML",
+      "namespace": "https://github.com/FasterXML"
+    },
+    "title": "Woodstox XML parser DTD recursion vulnerability",
+    "tracking": {
+      "current_release_date": "2022-09-16T00:00:00Z",
+      "id": "FXML-VEX-2022-40152",
+      "initial_release_date": "2022-09-16T00:00:00Z",
+      "revision_history": [
+        { "date": "2022-09-16T00:00:00Z", "number": "1", "summary": "Initial release" }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2022-40152",
+      "title": "Woodstox XML parser DTD recursion DoS",
+      "discovery_date": "2022-09-16T00:00:00Z",
+      "release_date": "2022-09-16T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Woodstox XML parser before 6.4.0 is vulnerable to denial of service via unbounded DTD entity recursion. Applications parsing untrusted XML input may be affected." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H", "baseScore": 7.5, "baseSeverity": "HIGH" }, "products": ["CSAFPID-woodstox-603", "CSAFPID-woodstox-502"] }],
+      "product_status": {
+        "known_affected": ["CSAFPID-woodstox-603", "CSAFPID-woodstox-502"],
+        "fixed": ["CSAFPID-woodstox-640"]
+      }
+    }
+  ],
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "FasterXML",
+        "branches": [
+          {
+            "category": "product_version",
+            "name": "woodstox-core-5.0.2",
+            "product": {
+              "product_id": "CSAFPID-woodstox-502",
+              "name": "FasterXML woodstox-core 5.0.2",
+              "product_identification_helper": {
+                "purl": "pkg:maven/com.fasterxml.woodstox/woodstox-core@5.0.2"
+              }
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "woodstox-core-6.0.3",
+            "product": {
+              "product_id": "CSAFPID-woodstox-603",
+              "name": "FasterXML woodstox-core 6.0.3",
+              "product_identification_helper": {
+                "purl": "pkg:maven/com.fasterxml.woodstox/woodstox-core@6.0.3"
+              }
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "woodstox-core-6.4.0",
+            "product": {
+              "product_id": "CSAFPID-woodstox-640",
+              "name": "FasterXML woodstox-core 6.4.0",
+              "product_identification_helper": {
+                "purl": "pkg:maven/com.fasterxml.woodstox/woodstox-core@6.4.0"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

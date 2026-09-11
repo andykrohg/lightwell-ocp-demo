@@ -1,0 +1,92 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "coordinator",
+      "name": "Lightwell Demo Advisory Feed",
+      "namespace": "https://lightwell.io"
+    },
+    "title": "Spring Framework vulnerabilities affecting catalog-app",
+    "tracking": {
+      "current_release_date": "2026-01-15T00:00:00Z",
+      "id": "LW-ADV-2026-SPRING",
+      "initial_release_date": "2026-01-15T00:00:00Z",
+      "revision_history": [
+        { "date": "2026-01-15T00:00:00Z", "number": "1", "summary": "Initial release" }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2024-22243",
+      "title": "Spring Framework URL parsing open redirect/SSRF",
+      "discovery_date": "2024-02-23T00:00:00Z",
+      "release_date": "2024-02-23T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Open redirect and SSRF via crafted URL passed to UriComponentsBuilder in Spring Framework." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:L/A:N", "baseScore": 8.1, "baseSeverity": "HIGH" }, "products": ["CSAFPID-spring-web-5331"] }],
+      "product_status": { "known_affected": ["CSAFPID-spring-web-5331"] }
+    },
+    {
+      "cve": "CVE-2024-22259",
+      "title": "Spring Framework UriComponentsBuilder SSRF bypass",
+      "discovery_date": "2024-03-16T00:00:00Z",
+      "release_date": "2024-03-16T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Bypass of CVE-2024-22243 fix in UriComponentsBuilder allows open redirect and SSRF via different URL schemes." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:L/A:N", "baseScore": 8.1, "baseSeverity": "HIGH" }, "products": ["CSAFPID-spring-web-5331"] }],
+      "product_status": { "known_affected": ["CSAFPID-spring-web-5331"] }
+    },
+    {
+      "cve": "CVE-2024-22262",
+      "title": "Spring Framework URL validation bypass (third variant)",
+      "discovery_date": "2024-04-11T00:00:00Z",
+      "release_date": "2024-04-11T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Third bypass of UriComponentsBuilder URL validation in Spring Framework enabling open redirect and SSRF attacks." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:L/A:N", "baseScore": 8.1, "baseSeverity": "HIGH" }, "products": ["CSAFPID-spring-web-5331"] }],
+      "product_status": { "known_affected": ["CSAFPID-spring-web-5331"] }
+    },
+    {
+      "cve": "CVE-2024-38816",
+      "title": "Spring Framework static resource path traversal",
+      "discovery_date": "2024-09-13T00:00:00Z",
+      "release_date": "2024-09-13T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Path traversal vulnerability in Spring Framework when serving static resources via RouterFunctions." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", "baseScore": 7.5, "baseSeverity": "HIGH" }, "products": ["CSAFPID-spring-webmvc-5331"] }],
+      "product_status": { "known_affected": ["CSAFPID-spring-webmvc-5331"] }
+    }
+  ],
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "VMware",
+        "branches": [
+          {
+            "category": "product_version",
+            "name": "spring-web-5.3.31",
+            "product": {
+              "product_id": "CSAFPID-spring-web-5331",
+              "name": "Spring Framework spring-web 5.3.31",
+              "product_identification_helper": {
+                "purl": "pkg:maven/org.springframework/spring-web@5.3.31"
+              }
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "spring-webmvc-5.3.31",
+            "product": {
+              "product_id": "CSAFPID-spring-webmvc-5331",
+              "name": "Spring Framework spring-webmvc 5.3.31",
+              "product_identification_helper": {
+                "purl": "pkg:maven/org.springframework/spring-webmvc@5.3.31"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "coordinator",
+      "name": "Lightwell Demo Advisory Feed",
+      "namespace": "https://lightwell.io"
+    },
+    "title": "Apache Tomcat vulnerabilities affecting catalog-app",
+    "tracking": {
+      "current_release_date": "2026-01-15T00:00:00Z",
+      "id": "LW-ADV-2026-TOMCAT",
+      "initial_release_date": "2026-01-15T00:00:00Z",
+      "revision_history": [
+        { "date": "2026-01-15T00:00:00Z", "number": "1", "summary": "Initial release" }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2024-24549",
+      "title": "Tomcat HTTP/2 header handling DoS",
+      "discovery_date": "2024-03-13T00:00:00Z",
+      "release_date": "2024-03-13T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Denial of service in Apache Tomcat HTTP/2 header handling. Stream is not reset until all headers have been processed, allowing a client to send excessive headers." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H", "baseScore": 7.5, "baseSeverity": "HIGH" }, "products": ["CSAFPID-tomcat-embed-core-9083"] }],
+      "product_status": { "known_affected": ["CSAFPID-tomcat-embed-core-9083"] }
+    },
+    {
+      "cve": "CVE-2024-34750",
+      "title": "Tomcat HTTP/2 connection leak DoS",
+      "discovery_date": "2024-07-03T00:00:00Z",
+      "release_date": "2024-07-03T00:00:00Z",
+      "notes": [{ "category": "description", "text": "HTTP/2 stream miscounting in Apache Tomcat leads to infinite timeout and connection leak, enabling denial of service." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H", "baseScore": 7.5, "baseSeverity": "HIGH" }, "products": ["CSAFPID-tomcat-embed-core-9083"] }],
+      "product_status": { "known_affected": ["CSAFPID-tomcat-embed-core-9083"] }
+    }
+  ],
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "Apache Software Foundation",
+        "branches": [
+          {
+            "category": "product_version",
+            "name": "tomcat-embed-core-9.0.83",
+            "product": {
+              "product_id": "CSAFPID-tomcat-embed-core-9083",
+              "name": "Apache Tomcat Embed Core 9.0.83",
+              "product_identification_helper": {
+                "purl": "pkg:maven/org.apache.tomcat.embed/tomcat-embed-core@9.0.83"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

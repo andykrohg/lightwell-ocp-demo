@@ -1,0 +1,74 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "coordinator",
+      "name": "Lightwell Demo Advisory Feed",
+      "namespace": "https://lightwell.io"
+    },
+    "title": "Logback vulnerabilities affecting catalog-app",
+    "tracking": {
+      "current_release_date": "2026-01-15T00:00:00Z",
+      "id": "LW-ADV-2026-LOGBACK",
+      "initial_release_date": "2026-01-15T00:00:00Z",
+      "revision_history": [
+        { "date": "2026-01-15T00:00:00Z", "number": "1", "summary": "Initial release" }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2023-6378",
+      "title": "Logback receiver serialization DoS",
+      "discovery_date": "2023-11-29T00:00:00Z",
+      "release_date": "2023-11-29T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Denial of service via crafted serialized data sent to logback receiver component." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H", "baseScore": 7.5, "baseSeverity": "HIGH" }, "products": ["CSAFPID-logback-core-1212", "CSAFPID-logback-classic-1212"] }],
+      "product_status": { "known_affected": ["CSAFPID-logback-core-1212", "CSAFPID-logback-classic-1212"] }
+    },
+    {
+      "cve": "CVE-2023-6481",
+      "title": "Logback deserialization DoS (incomplete fix)",
+      "discovery_date": "2023-12-04T00:00:00Z",
+      "release_date": "2023-12-04T00:00:00Z",
+      "notes": [{ "category": "description", "text": "Incomplete fix for CVE-2023-6378: denial of service via unchecked argument array length during deserialization in logback receiver." }],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H", "baseScore": 7.5, "baseSeverity": "HIGH" }, "products": ["CSAFPID-logback-core-1212", "CSAFPID-logback-classic-1212"] }],
+      "product_status": { "known_affected": ["CSAFPID-logback-core-1212", "CSAFPID-logback-classic-1212"] }
+    }
+  ],
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "QOS.ch",
+        "branches": [
+          {
+            "category": "product_version",
+            "name": "logback-core-1.2.12",
+            "product": {
+              "product_id": "CSAFPID-logback-core-1212",
+              "name": "Logback Core 1.2.12",
+              "product_identification_helper": {
+                "purl": "pkg:maven/ch.qos.logback/logback-core@1.2.12"
+              }
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "logback-classic-1.2.12",
+            "product": {
+              "product_id": "CSAFPID-logback-classic-1212",
+              "name": "Logback Classic 1.2.12",
+              "product_identification_helper": {
+                "purl": "pkg:maven/ch.qos.logback/logback-classic@1.2.12"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

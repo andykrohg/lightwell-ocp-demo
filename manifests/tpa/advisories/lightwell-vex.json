@@ -26,12 +26,16 @@
   "vulnerabilities": [
     {
       "cve": "CVE-2022-40152",
+      "title": "Woodstox XML parser DTD recursion DoS",
+      "discovery_date": "2022-09-16T00:00:00Z",
+      "release_date": "2022-09-16T00:00:00Z",
       "notes": [
         {
-          "category": "summary",
+          "category": "description",
           "text": "Denial of service via DTD recursion in Woodstox XML parser. Fixed in Lightwell-patched build 6.0.3.rhlw-00001 by adding a recursion depth limit of 500."
         }
       ],
+      "scores": [{ "cvss_v3": { "version": "3.1", "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H", "baseScore": 7.5, "baseSeverity": "HIGH" }, "products": ["CSAFPID-woodstox-vulnerable"] }],
       "product_status": {
         "known_not_affected": ["CSAFPID-lightwell-woodstox-patched"],
         "known_affected": ["CSAFPID-woodstox-vulnerable"]

@@ -22,12 +22,12 @@ echo -e "  Apps domain: ${APPS_DOMAIN}"
 echo ""
 
 # 1. Namespace
-echo -e "${GREEN}1/9 Creating namespace${NC}"
+echo -e "${GREEN}1/8 Creating namespace${NC}"
 oc new-project "$NAMESPACE" 2>/dev/null || oc project "$NAMESPACE"
 echo ""
 
 # 2. Prerequisites (PostgreSQL + MinIO + Keycloak)
-echo -e "${GREEN}2/9 Deploying PostgreSQL, MinIO, and Keycloak${NC}"
+echo -e "${GREEN}2/8 Deploying PostgreSQL, MinIO, and Keycloak${NC}"
 oc delete configmap keycloak-realm-import -n "$NAMESPACE" 2>/dev/null || true
 oc create configmap keycloak-realm-import \
   --from-file=trustify-realm.json="$TPA_DIR/keycloak-realm.json" \
@@ -38,7 +38,7 @@ sed "s/NAMESPACE/$NAMESPACE/g" "$TPA_DIR/prerequisites.yaml" \
 echo ""
 
 # 3. Wait for prerequisites
-echo -e "${GREEN}3/9 Waiting for prerequisites${NC}"
+echo -e "${GREEN}3/8 Waiting for prerequisites${NC}"
 echo "   PostgreSQL..."
 oc rollout status statefulset/postgresql -n "$NAMESPACE" --timeout=180s
 echo "   MinIO..."
@@ -48,7 +48,7 @@ oc rollout status deployment/keycloak -n "$NAMESPACE" --timeout=180s
 echo ""
 
 # 4. Post-install: MinIO bucket + Keycloak realm + route
-echo -e "${GREEN}4/9 Configuring MinIO bucket and Keycloak realm${NC}"
+echo -e "${GREEN}4/8 Configuring MinIO bucket and Keycloak realm${NC}"
 MINIO_POD=$(oc get pod -n "$NAMESPACE" -l app=minio -o jsonpath='{.items[0].metadata.name}')
 oc exec -n "$NAMESPACE" "$MINIO_POD" -- \
   mc alias set local http://localhost:9000 minioadmin minioadmin-demo-password 2>/dev/null || true
@@ -99,7 +99,7 @@ echo -e "   Keycloak issuer: ${KC_ISSUER}"
 echo ""
 
 # 5. Apply TPA CR
-echo -e "${GREEN}5/9 Creating TPA instance${NC}"
+echo -e "${GREEN}5/8 Creating TPA instance${NC}"
 sed \
   -e "s|KEYCLOAK_ISSUER_PLACEHOLDER|${KC_ISSUER}|g" \
   -e "s/NAMESPACE/$NAMESPACE/g" \
@@ -108,7 +108,7 @@ sed \
 echo ""
 
 # 6. Run database migration
-echo -e "${GREEN}6/9 Waiting for server pod then running database migration${NC}"
+echo -e "${GREEN}6/8 Waiting for server pod then running database migration${NC}"
 oc rollout status deployment/server -n "$NAMESPACE" --timeout=120s 2>/dev/null || true
 sleep 10
 SERVER_POD=$(oc get pod -n "$NAMESPACE" -l app.kubernetes.io/name=server -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
@@ -117,71 +117,46 @@ if [ -n "$SERVER_POD" ]; then
   echo "   Migration complete. Setting UI scopes and restarting pods..."
   oc set env deployment/server -n "$NAMESPACE" \
     UI_SCOPE="openid create:document read:document update:document delete:document"
-  oc rollout restart deployment/server deployment/importer -n "$NAMESPACE"
+  oc rollout restart deployment/server -n "$NAMESPACE"
   oc rollout status deployment/server -n "$NAMESPACE" --timeout=120s
-  oc rollout status deployment/importer -n "$NAMESPACE" --timeout=120s
 fi
 echo ""
 
-# 7. Upload Lightwell VEX data
-echo -e "${GREEN}7/9 Uploading Lightwell VEX advisory${NC}"
-VEX_TOKEN=$(curl -sk "https://${KC_HOST}/realms/trustify/protocol/openid-connect/token" \
+# 7. Upload advisory data
+echo -e "${GREEN}7/8 Uploading advisory data${NC}"
+ADV_TOKEN=$(curl -sk "https://${KC_HOST}/realms/trustify/protocol/openid-connect/token" \
   -d "client_id=walker" -d "client_secret=walker-secret-for-demo" \
   -d "grant_type=client_credentials" -d "scope=openid" \
   | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null) || true
-if [ -n "$VEX_TOKEN" ]; then
+if [ -n "$ADV_TOKEN" ]; then
   TPA_ROUTE=$(oc get route -n "$NAMESPACE" -l app.kubernetes.io/name=server -o jsonpath='{.items[0].spec.host}' 2>/dev/null)
-  VEX_RESP=$(curl -sk -X POST "https://${TPA_ROUTE}/api/v3/advisory" \
-    -H "Authorization: Bearer $VEX_TOKEN" \
-    -H "Content-Type: application/json" \
-    -d @"$TPA_DIR/lightwell-vex.json" -w "%{http_code}" -o /dev/null 2>/dev/null) || true
-  if [ "$VEX_RESP" = "201" ] || [ "$VEX_RESP" = "200" ]; then
-    echo -e "  ${GREEN}OK${NC}"
-  elif [ "$VEX_RESP" = "409" ]; then
-    echo -e "  ${YELLOW}already exists${NC}"
-  else
-    echo -e "  ${YELLOW}HTTP $VEX_RESP (may need manual upload)${NC}"
-  fi
+  for adv_file in "$TPA_DIR"/advisories/*.json; do
+    [ -f "$adv_file" ] || continue
+    fname=$(basename "$adv_file")
+    ADV_RESP=$(curl -sk -X POST "https://${TPA_ROUTE}/api/v3/advisory" \
+      -H "Authorization: Bearer $ADV_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d @"$adv_file" -w "%{http_code}" -o /dev/null 2>/dev/null) || true
+    if [ "$ADV_RESP" = "201" ] || [ "$ADV_RESP" = "200" ]; then
+      echo -e "  ${fname}: ${GREEN}OK${NC}"
+    elif [ "$ADV_RESP" = "409" ]; then
+      echo -e "  ${fname}: ${YELLOW}already exists${NC}"
+    else
+      echo -e "  ${fname}: ${YELLOW}HTTP $ADV_RESP${NC}"
+    fi
+  done
+  echo "  Seeding vulnerability metadata..."
+  oc exec -i -n "$NAMESPACE" statefulset/postgresql -- \
+    psql -U trustify -d trustify < "$TPA_DIR/seed-vulnerability-metadata.sql" 2>/dev/null \
+    && echo -e "  ${GREEN}OK${NC}" \
+    || echo -e "  ${YELLOW}seed SQL failed (non-critical)${NC}"
 else
-  echo -e "  ${YELLOW}Could not obtain token — upload VEX manually${NC}"
+  echo -e "  ${YELLOW}Could not obtain token — upload advisories manually${NC}"
 fi
 echo ""
 
-# 8. Create CSAF importer via API (operator createImporters is unreliable)
-echo -e "${GREEN}8/9 Creating Red Hat CSAF importer${NC}"
-IMP_TOKEN=$(curl -sk "https://${KC_HOST}/realms/trustify/protocol/openid-connect/token" \
-  -d "client_id=walker" -d "client_secret=walker-secret-for-demo" \
-  -d "grant_type=client_credentials" -d "scope=openid" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null) || true
-if [ -n "$IMP_TOKEN" ]; then
-  TPA_ROUTE=$(oc get route -n "$NAMESPACE" -l app.kubernetes.io/name=server -o jsonpath='{.items[0].spec.host}' 2>/dev/null)
-  # Delete existing importer if present (idempotent re-run)
-  curl -sk -X DELETE "https://${TPA_ROUTE}/api/v3/importer/redhat-csaf" \
-    -H "Authorization: Bearer $IMP_TOKEN" -o /dev/null 2>/dev/null || true
-  IMP_RESP=$(curl -sk -X POST "https://${TPA_ROUTE}/api/v3/importer/redhat-csaf" \
-    -H "Authorization: Bearer $IMP_TOKEN" \
-    -H "Content-Type: application/json" \
-    -d '{
-      "csaf": {
-        "source": "https://access.redhat.com/security/data/csaf/v2/provider-metadata.json",
-        "v3Signatures": true,
-        "period": "24h",
-        "onlyPatterns": ["^cve-202[2-5]-"],
-        "disabled": false
-      }
-    }' -w "%{http_code}" -o /dev/null 2>/dev/null) || true
-  if [ "$IMP_RESP" = "201" ] || [ "$IMP_RESP" = "200" ]; then
-    echo -e "  ${GREEN}OK${NC} — importing CVEs from 2022-2025 (filtered by filename pattern)"
-  else
-    echo -e "  ${YELLOW}HTTP $IMP_RESP (may need manual creation)${NC}"
-  fi
-else
-  echo -e "  ${YELLOW}Could not obtain token — create importer manually${NC}"
-fi
-echo ""
-
-# 9. Summary
-echo -e "${GREEN}9/9 Verifying${NC}"
+# 8. Summary
+echo -e "${GREEN}8/8 Verifying${NC}"
 TPA_ROUTE=$(oc get route -n "$NAMESPACE" -l app.kubernetes.io/name=server -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "")
 
 echo ""

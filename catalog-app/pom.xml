@@ -78,6 +78,10 @@
             </properties>
             <repositories>
                 <repository>
+                    <id>central</id>
+                    <url>https://repo.maven.apache.org/maven2</url>
+                </repository>
+                <repository>
                     <id>lightwell</id>
                     <name>Red Hat Lightwell Network</name>
                     <url>https://packages.redhat.com/lightwell/public-lightwell-demo/java/remediated/</url>
