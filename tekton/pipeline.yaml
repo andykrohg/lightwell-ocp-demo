@@ -178,7 +178,6 @@ spec:
     - name: acs-image-check
       runAfter:
         - buildah
-        - vex-reconcile
       taskRef:
         name: acs-image-check
       params:
