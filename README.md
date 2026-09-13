@@ -33,9 +33,8 @@ attack vector.
 │  ┌──────┴─────────────────┴───────────────────────────────┐    │
 │  │              Tekton Pipeline                            │    │
 │  │  git-clone → maven-build ─┬─ upload-sbom → vex-reconcile│    │
-│  │                           └─ buildah ─┐                │    │
-│  │                           acs-check ──┤→ deploy        │    │
-│  │                           acs-scan ───┘                │    │
+│  │                           └─ buildah ──→ acs-check     │    │
+│  │                                            → deploy    │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  ┌────────────────────┐  ┌─────────────────────────────────┐   │
@@ -118,7 +117,7 @@ lightwell-ocp-demo/
 │   └── Containerfile     UBI9 nginx, URLs injected via envsubst
 ├── tekton/               Tekton CI pipeline
 │   ├── pipeline.yaml     git-clone → build → upload-sbom → scan → deploy
-│   ├── tasks/            Custom tasks: upload-sbom, vex-reconcile, acs-image-check/scan
+│   ├── tasks/            Custom tasks: upload-sbom, vex-reconcile, acs-image-check
 │   └── pipelinerun-*.yaml  Pre-configured runs for each variant
 ├── acs-policies/         ACS policy definitions (imported during setup)
 ├── manifests/

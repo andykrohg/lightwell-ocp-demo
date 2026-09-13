@@ -191,26 +191,10 @@ spec:
         - name: SOFT_FAIL
           value: $(params.SOFT_FAIL)
 
-    # 7. ACS vulnerability scan
-    - name: acs-image-scan
-      runAfter:
-        - buildah
-        - vex-reconcile
-      taskRef:
-        name: acs-image-scan
-      params:
-        - name: ROX_CENTRAL_ENDPOINT
-          value: $(params.ROX_CENTRAL_ENDPOINT)
-        - name: ROX_API_TOKEN
-          value: $(params.ROX_API_TOKEN)
-        - name: IMAGE
-          value: $(params.IMAGE_NAME):$(params.IMAGE_TAG)
-
-    # 8. Deploy to OpenShift
+    # 7. Deploy to OpenShift
     - name: deploy
       runAfter:
         - acs-image-check
-        - acs-image-scan
       taskSpec:
         params:
           - name: NAMESPACE
