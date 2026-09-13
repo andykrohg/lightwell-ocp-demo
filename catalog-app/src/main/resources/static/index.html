@@ -50,6 +50,10 @@
   .attack-result { margin-top: 1rem; padding: .75rem 1rem; border-radius: 4px; font-size: .85rem; font-family: 'Red Hat Mono', monospace; line-height: 1.6; display: none; }
   .attack-result.error { background: #fce4e4; color: var(--danger); display: block; }
   .attack-result.success { background: #e6f5e2; color: var(--success); display: block; }
+  .payload-preview details { margin: .75rem 0; }
+  .payload-preview summary { cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--muted); }
+  .payload-preview pre { background: #1a1a1a; color: #e0e0e0; padding: .75rem 1rem; border-radius: 4px; font-size: .8rem; line-height: 1.6; overflow-x: auto; margin-top: .5rem; }
+  .payload-preview .depth-note { color: #6a6e73; font-style: italic; }
 </style>
 </head>
 <body>
@@ -80,6 +84,18 @@
     <p>Sends a crafted XML payload with deeply nested DTD declarations to the <code>/api/products/import</code> endpoint.
        In the vulnerable version, this triggers unbounded recursion in the Woodstox parser, crashing the service.
        The Lightwell-patched version rejects it at a recursion depth limit of 500.</p>
+    <div class="payload-preview">
+      <details>
+        <summary>View payload</summary>
+        <pre>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE foo [
+  &lt;!ELEMENT foo <span class="depth-note">&lt;!-- 20,000 nested parens --&gt;</span>
+    ((((((((((((((((((((( ... a ... )))))))))))))))))))))
+  &gt;
+]&gt;
+&lt;foo/&gt;</pre>
+      </details>
+    </div>
     <button class="attack-btn" id="attack-btn" onclick="runExploit()">Send Exploit Payload</button>
     <div class="attack-result" id="attack-result"></div>
   </div>
